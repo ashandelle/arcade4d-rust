@@ -1,8 +1,5 @@
 use nalgebra::{SVector, Scalar, Unit};
 
-pub(crate) trait ScalarType: Scalar + num_traits::identities::Zero + std::ops::AddAssign + std::ops::MulAssign + std::ops::Mul + nalgebra::ClosedMulAssign + std::cmp::PartialOrd {}
-impl<T> ScalarType for T where T: Scalar + num_traits::identities::Zero + std::ops::AddAssign + std::ops::MulAssign + std::ops::Mul + nalgebra::ClosedMulAssign + std::cmp::PartialOrd {}
-
 pub(crate) struct Polytope<T: ScalarType, const D: usize> {
     center: SVector<T, D>,
     zonotopes: Vec<Vec<SVector<T, D>>>,
