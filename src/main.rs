@@ -2,7 +2,7 @@
 // use polytope::Polytope as Polytope;
 
 use macroquad::prelude::*;
-use nalgebra::{SMatrix, SVector, Vector2};
+use nalgebra::{SMatrix, SVector, Vector3, Vector2};
 use ::rand::{prelude::*, rng};
 use rand_distr::StandardNormal;
 
@@ -16,9 +16,11 @@ type Vector = SVector<Scalar, DIMENSION>;
 type BiVector = SVector<Scalar, BIDIMENSION>;
 type Matrix = SMatrix<Scalar, DIMENSION, DIMENSION>;
 
+type Vec3 = Vector3<f64>;
 type Vec2 = Vector2<f32>;
 
 static FRAMERATE: i16 = 360;
+static NEARCLIP: f64 = 1e-8;
 
 // static verts: Vec<Vector> = ncubevertices<Scalar, DIMENSION>();
 static verts: [Vector; 16] = [
@@ -113,8 +115,10 @@ async fn main() {
         time = new_time;
         dta = dta * 0.99 + (dt as f32) * 0.01;
 
-        let scale: f32 = (screen_width().min(screen_height())) / 2.0;
-        let off: Vec2 = Vec2::new(screen_width(), screen_height()) / 2.0;
+        let screen: (f32, Vec2) = (
+            (screen_width().min(screen_height())) / 2.0,
+            Vec2::new(screen_width(), screen_height()) / 2.0,
+        );
 
 
 
@@ -153,16 +157,14 @@ async fn main() {
             DARKGRAY,
         );
 
-        let mut projectedverts: Vec<Vec2> = Vec::new();
+        let mut transformedverts: Vec<Vector> = Vec::new();
 
         for i in 0..verts.len() {
-            projectedverts.push(off + scale * project(worldtocamera(verts[i], camera), 0, 1, 2));
+            transformedverts.push(worldtocamera(verts[i], camera));
         }
 
         for i in 0..edges.len() {
-            let p1: Vec2 = projectedverts[edges[i].0];
-            let p2: Vec2 = projectedverts[edges[i].1];
-            draw_line(p1.x, p1.y, p2.x, p2.y, 2.0, WHITE);
+            line(transformedverts[edges[i].0], transformedverts[edges[i].1], 2.0, WHITE, screen);
         }
 
         camera.0 = randrot * camera.0;
@@ -175,8 +177,33 @@ async fn main() {
     }
 }
 
-fn project(pos: Vector, d1: usize, d2: usize, dp: usize) -> Vec2 {
-    return Vec2::new((pos[d1] / pos[dp]) as f32, (pos[d2] / pos[dp]) as f32);
+fn line(p1: Vector, p2: Vector, thickness: f32, color: Color, screen: (f32, Vec2)) {
+    let mut v1: Vec3 = project(p1, 0, 1, 2);
+    let mut v2: Vec3 = project(p2, 0, 1, 2);
+    if (v1.z > NEARCLIP && v2.z > NEARCLIP) {
+        line3(v1, v2, thickness, color, screen);
+        return;
+    }
+    if (v2.z > NEARCLIP) {
+        std::mem::swap(&mut v1, &mut v2);
+    }
+    if (v1.z > NEARCLIP) {
+        let t = (NEARCLIP - v1.z) / (v2.z - v1.z);
+        v2 = v1 + t * (v2 - v1);
+        line3(v1, v2, thickness, color, screen);
+    }
+}
+fn line3(p1: Vec3, p2: Vec3, thickness: f32, color: Color, screen: (f32, Vec2)) {
+    let v1: Vec2 = (p1.xy() / p1.z).map(|x| x as f32) * screen.0 + screen.1;
+    let v2: Vec2 = (p2.xy() / p2.z).map(|x| x as f32) * screen.0 + screen.1;
+    draw_line(v1.x, v1.y, v2.x, v2.y, thickness, color);
+}
+// fn draw_linef64(x1: f64, y1: f64, x2: f64, y2: f64, thickness: f32, color: Color) {
+//     draw_line(x1 as f32, y1 as f32, x2 as f32, y2 as f32, thickness, color);
+// }
+
+fn project(pos: Vector, d1: usize, d2: usize, dp: usize) -> Vec3 {
+    return Vec3::new(pos[d1], pos[d2], pos[dp]);
 }
 
 fn worldtocamera(pos: Vector, camera: (Vector, Matrix)) -> Vector {
