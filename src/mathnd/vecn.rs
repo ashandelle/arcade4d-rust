@@ -1,5 +1,5 @@
 use super::{BiVecN};
-use std::ops::{Neg, Add, Sub, Mul, Div};
+use std::ops::{Neg, Add, Sub, Mul, Div, BitXor};
 
 #[derive(Debug, Clone)]
 pub struct VecN {
@@ -180,6 +180,16 @@ impl<'a> Div<f64> for &'a VecN {
     }
 }
 
+// Wedge product
+// impl BitXor for VecN {
+//     type Output = BiVecN;
+//     fn bitxor(self, v: VecN) -> BiVecN {
+//         BiVecN {
+//             ee:
+//         }
+//     }
+// }
+
 impl VecN {
     // Dot product
     pub fn dot(&self, v: &VecN) -> f64 {
@@ -200,8 +210,6 @@ impl VecN {
                     .collect(),
         }
     }
-
-    // Wedge product
 
     // Zero
     pub fn zero(dim: usize) -> Self {
