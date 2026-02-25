@@ -249,21 +249,21 @@ impl Mul for MatN {
 
 impl MatN {
     // To BiVecN
+    pub fn to_bivecn(self) -> BiVecN {
+        BiVecN {
+            m: self,
+        }.skew()
+    }
 
     // Orthonormalize
 
     // Transpose
-    pub fn transpose(self) -> MatN {
+    pub fn transpose(&self) -> MatN {
         let mut t: Vec<VecN> = Vec::new();
-        for i in 0..self.e.get(0).unwrap().e.len() {
+        for i in 0..self.e[0].e.len() {
             let mut v: Vec<f64> = Vec::new();
             for j in 0..self.e.len() {
-                v.push(
-                    match self.e.get(j).unwrap().e.get(i) {
-                        Some(value) => *value,
-                        None => 0.0,
-                    }
-                );
+                v.push(self.e[j].e[i]);
             }
             t.push(VecN{e: v});
         }
@@ -272,9 +272,29 @@ impl MatN {
         }
     }
 
+    pub fn mult_transpose(&self, v: &VecN) -> VecN {
+        VecN {
+            e: self.transpose().e.iter()
+                .map(|x| x.dot(&v))
+                .collect(),
+        }
+    }
+
     // Inverse
 
     // Zero
+    pub fn zero(dim: usize) -> Self {
+        Self {
+            e: vec![VecN::zero(dim); dim],
+        }
+    }
 
     // Identity
+    pub fn identity(dim: usize) -> Self {
+        let mut mat = Self::zero(dim);
+        for i in 0..dim {
+            mat.e[i].e[i] = 1.0;
+        }
+        mat
+    }
 }

@@ -1,4 +1,4 @@
-use super::{BiVecN};
+use super::{BiVecN, MatN};
 use std::ops::{Neg, Add, Sub, Mul, Div, BitXor};
 
 #[derive(Debug, Clone)]
@@ -181,14 +181,86 @@ impl<'a> Div<f64> for &'a VecN {
 }
 
 // Wedge product
-// impl BitXor for VecN {
-//     type Output = BiVecN;
-//     fn bitxor(self, v: VecN) -> BiVecN {
-//         BiVecN {
-//             ee:
-//         }
-//     }
-// }
+impl BitXor for VecN {
+    type Output = BiVecN;
+    fn bitxor(self, v: VecN) -> BiVecN {
+        let mut vecs: Vec<VecN> = Vec::new();
+
+        for i in 0..v.e.len() {
+            let mut vec: Vec<f64> = Vec::new();
+            for j in 0..v.e.len() {
+                vec.push(
+                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
+                );
+            }
+            vecs.push(VecN{e: vec});
+        }
+
+        BiVecN {
+            m: MatN{e: vecs},
+        }
+    }
+}
+impl<'a> BitXor<VecN> for &'a VecN {
+    type Output = BiVecN;
+    fn bitxor(self, v: VecN) -> BiVecN {
+        let mut vecs: Vec<VecN> = Vec::new();
+
+        for i in 0..v.e.len() {
+            let mut vec: Vec<f64> = Vec::new();
+            for j in 0..v.e.len() {
+                vec.push(
+                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
+                );
+            }
+            vecs.push(VecN{e: vec});
+        }
+
+        BiVecN {
+            m: MatN{e: vecs},
+        }
+    }
+}
+impl<'b> BitXor<&'b VecN> for VecN {
+    type Output = BiVecN;
+    fn bitxor(self, v: &VecN) -> BiVecN {
+        let mut vecs: Vec<VecN> = Vec::new();
+
+        for i in 0..v.e.len() {
+            let mut vec: Vec<f64> = Vec::new();
+            for j in 0..v.e.len() {
+                vec.push(
+                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
+                );
+            }
+            vecs.push(VecN{e: vec});
+        }
+
+        BiVecN {
+            m: MatN{e: vecs},
+        }
+    }
+}
+impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
+    type Output = BiVecN;
+    fn bitxor(self, v: &VecN) -> BiVecN {
+        let mut vecs: Vec<VecN> = Vec::new();
+
+        for i in 0..v.e.len() {
+            let mut vec: Vec<f64> = Vec::new();
+            for j in 0..v.e.len() {
+                vec.push(
+                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
+                );
+            }
+            vecs.push(VecN{e: vec});
+        }
+
+        BiVecN {
+            m: MatN{e: vecs},
+        }
+    }
+}
 
 impl VecN {
     // Dot product
@@ -197,6 +269,10 @@ impl VecN {
                 .zip((v.e).iter())
                 .map(|(&x, &y)| x * y)
                 .sum()
+    }
+    // Left contraction
+    pub fn left_contract(&self, v: &BiVecN) -> VecN {
+        -(&v.m * self)
     }
 
     // Normalize
@@ -217,9 +293,11 @@ impl VecN {
             e: vec![0.0; dim],
         }
     }
-    // pub fn zero() -> Self {
-    //     Self {
-    //         e: self.e.fill(0.0),
-    //     }
-    // }
+
+    // Basis element
+    pub fn basis(dim: usize, element: usize) -> Self {
+        let mut vec = Self::zero(dim);
+        vec.e[element] = 1.0;
+        vec
+    }
 }
