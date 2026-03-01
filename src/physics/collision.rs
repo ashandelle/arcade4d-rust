@@ -7,13 +7,13 @@ pub struct ContactState {
     bias: f64,
     normal_mass: f64,
     normal_impulse: f64,
-    tangent_mass: [f64; 3],
-    tangent_impulse: [f64; 3],
+    tangent_mass: Vec<f64>,
+    tangent_impulse: Vec<f64>,
 }
 
 pub struct CollisionConstraint {
     normal: VecN,
-    tangents: [VecN; 3],
+    tangents: Vec<VecN>,
     contacts: Vec<ContactState>,
     mu: f64,
 }
@@ -32,6 +32,8 @@ impl CollisionConstraint {
             contacts,
         } = manifold;
 
+        let dim = normal.e.len();
+
         let e = a.material.restitution.min(b.material.restitution);
         // TODO: move this into the Material struct
         let mu = 0.4;
@@ -41,7 +43,7 @@ impl CollisionConstraint {
         let contacts: Vec<_> = contacts
             .into_iter()
             .map(|contact| {
-                let rel_vel = b.vel_at(contact) - a.vel_at(contact);
+                let rel_vel = b.vel_at(&contact) - a.vel_at(&contact);
                 let rel_vel_normal = rel_vel.dot(&normal);
 
                 let slop = 0.01;
@@ -69,16 +71,14 @@ impl CollisionConstraint {
                      normal: VecN,
                      contact: VecN| {
                         // n' = ~R n R
-                        let body_normal = body.world_vec_to_body(normal);
-                        let body_contact = body.world_pos_to_body(contact);
+                        let body_normal = body.world_vec_to_body(&normal);
+                        let body_contact = body.world_pos_to_body(&contact);
 
                         // n . (R x . I_b^-1(x /\ n') ~R)
                         normal.dot(
                             &body.body_vec_to_world(
-                                body_contact.left_contract_bv(
-                                        &body.inverse_moment_of_inertia(
-                                            body_contact.wedge(body_normal),
-                                        ),
+                                &body_contact.left_contract(
+                                        &body.inverse_moment_of_inertia(&(body_contact ^ body_normal))
                                     ),
                             ),
                         )
@@ -92,8 +92,8 @@ impl CollisionConstraint {
                 let normal_mass =
                     1.0 / (inv_a_mass + inv_b_mass + inv_l_a + inv_l_b);
 
-                let mut tangent_mass = [0.0, 0.0, 0.0];
-                for i in 0..3 {
+                let mut tangent_mass = vec![0.0; dim-1];
+                for i in 0..(dim-1) {
                     let inv_l_t_a = mass_adjustment_a
                         * inverse_mass_term(a, tangents[i], contact);
                     let inv_l_t_b = mass_adjustment_b
@@ -109,7 +109,7 @@ impl CollisionConstraint {
                     normal_mass,
                     normal_impulse: 0.0,
                     tangent_mass,
-                    tangent_impulse: [0.0, 0.0, 0.0],
+                    tangent_impulse: vec![0.0; dim-1],
                 }
             })
             .collect();
@@ -128,17 +128,19 @@ impl CollisionConstraint {
                 contact,
                 bias,
                 normal_mass,
-                ref mut normal_impulse,
+                normal_impulse,
                 tangent_mass,
-                ref mut tangent_impulse,
-            } = *contact_state;
+                tangent_impulse,
+            } = contact_state;
 
-            let rel_vel = b.vel_at(contact) - a.vel_at(contact);
+            let dim = contact.e.len();
+
+            let rel_vel = b.vel_at(&contact) - a.vel_at(&contact);
 
             // calculate friction impulse
-            let mut new_impulses = [0f64; 3];
-            for i in 0..3 {
-                let lambda = -rel_vel.dot(self.tangents[i]) * tangent_mass[i];
+            let mut new_impulses = vec![0.0; dim-1];
+            for i in 0..(dim-1) {
+                let lambda = -rel_vel.dot(&self.tangents[i]) * tangent_mass[i];
                 new_impulses[i] = tangent_impulse[i] + lambda;
             }
 
@@ -153,22 +155,22 @@ impl CollisionConstraint {
             }
 
             // apply the friction impulses
-            for i in 0..3 {
+            for i in 0..(dim-1) {
                 let impulse =
-                    self.tangents[i] * (new_impulses[i] - tangent_impulse[i]);
+                    &self.tangents[i] * (new_impulses[i] - tangent_impulse[i]);
                 tangent_impulse[i] = new_impulses[i];
-                a.resolve_impulse(-impulse, contact);
-                b.resolve_impulse(impulse, contact);
+                a.resolve_impulse(&-&impulse, contact);
+                b.resolve_impulse(&impulse, contact);
             }
 
             // calculate normal impulse
-            let rel_vel_normal = rel_vel.dot(self.normal);
-            let lambda = normal_mass * (-rel_vel_normal + bias);
-            let prev_impulse = *normal_impulse;
-            *normal_impulse = (prev_impulse + lambda).max(0.0);
-            let impulse = self.normal * (*normal_impulse - prev_impulse);
-            a.resolve_impulse(-impulse, contact);
-            b.resolve_impulse(impulse, contact);
+            let rel_vel_normal = rel_vel.dot(&self.normal);
+            let lambda = *normal_mass * (-rel_vel_normal + *bias);
+            let prev_impulse = normal_impulse;
+            *normal_impulse = (*prev_impulse + lambda).max(0.0);
+            let impulse = &self.normal * (*normal_impulse - *prev_impulse);
+            a.resolve_impulse(&-&impulse, contact);
+            b.resolve_impulse(&impulse, contact);
         }
     }
 }

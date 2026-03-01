@@ -39,22 +39,19 @@ pub struct Body {
 }
 
 impl Body {
-    // pub fn resolve_impulse(
-    //     &mut self,
-    //     impulse: VecN,
-    //     world_contact: VecN,
-    // ) {
-    //     if !self.stationary {
-    //         let body_contact = self.world_pos_to_body(world_contact);
-    //         let delta_angular_vel = self.inverse_moment_of_inertia(
-    //             &Vec4::from(body_contact)
-    //                 .wedge_v(&self.rotation.reverse().rotate(&impulse.into())),
-    //         );
+    pub fn resolve_impulse(
+        &mut self,
+        impulse: &VecN,
+        world_contact: &VecN,
+    ) {
+        if !self.stationary {
+            let body_contact = world_contact - &self.pos.linear;
+            let delta_angular_mom = body_contact ^ impulse;
 
-    //         self.vel.linear += impulse / self.mass;
-    //         self.vel.angular = self.vel.angular + delta_angular_vel;
-    //     }
-    // }
+            self.mom.linear = &self.mom.linear + impulse;
+            self.mom.angular = &self.mom.angular + &delta_angular_mom;
+        }
+    }
 
     pub fn step(&mut self, dt: f64) {
         if !self.stationary {
@@ -99,15 +96,15 @@ impl Body {
         }
     }
 
-    // pub fn vel_at(&self, world_pos: VecN) -> VecN {
-    //     let body_pos = self.world_pos_to_body(world_pos);
+    pub fn vel_at(&self, world_pos: &VecN) -> VecN {
+        let body_pos = self.world_pos_to_body(&world_pos);
 
-    //     let rot_vel = self.body_vec_to_world(
-    //         body_pos.left_contract(&self.vel.angular)
-    //     );
+        let rot_vel = self.body_vec_to_world(
+            &body_pos.left_contract(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)))
+        );
 
-    //     &self.vel.linear + rot_vel
-    // }
+        (&self.mom.linear + rot_vel) / self.mass
+    }
 
     pub fn body_vec_to_world(&self, v: &VecN) -> VecN {
         &self.pos.angular * v

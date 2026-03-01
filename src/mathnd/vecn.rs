@@ -198,7 +198,7 @@ impl BitXor for VecN {
 
         BiVecN {
             m: MatN{e: vecs},
-        }
+        }.skew()
     }
 }
 impl<'a> BitXor<VecN> for &'a VecN {
@@ -218,7 +218,7 @@ impl<'a> BitXor<VecN> for &'a VecN {
 
         BiVecN {
             m: MatN{e: vecs},
-        }
+        }.skew()
     }
 }
 impl<'b> BitXor<&'b VecN> for VecN {
@@ -238,7 +238,7 @@ impl<'b> BitXor<&'b VecN> for VecN {
 
         BiVecN {
             m: MatN{e: vecs},
-        }
+        }.skew()
     }
 }
 impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
@@ -258,7 +258,7 @@ impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
 
         BiVecN {
             m: MatN{e: vecs},
-        }
+        }.skew()
     }
 }
 
