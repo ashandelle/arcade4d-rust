@@ -1,21 +1,22 @@
-use crate::mathnd::{BiVecN, VecN};
+use crate::mathnd::{BiVecN, MatN, VecN};
 
 mod mathnd;
 
 fn main() {
-    let v1: VecN = VecN{e: vec![1.0, 2.0, 3.0, 4.0]};//.normalize();
-    let v2: VecN = VecN{e: vec![-1.0, -0.5, 0.0, 2.0]};//.normalize();
-    let v3: VecN = VecN::zero(4);
+    let v1: VecN = VecN{e: vec![1.0, 2.0, 3.0, 4.0]}.normalize();
+    let v2: VecN = VecN{e: vec![-1.0, -0.5, 0.0, 2.0]}.normalize();
 
-    let b1: BiVecN = &v1 ^ &v2;
+    let m1: MatN = MatN::from_vecn_interpolate(&v1, &v2, 0.75);
 
-    // -11.25
+    let v3 = &m1 * &v1;
+
+    let t1 = v1.dot(&v3);
+    let t2 = v2.dot(&v3);
 
     println!("{:?}", v1);
     println!("{:?}", v2);
     println!("{:?}", v3);
-    println!("{:?}", b1);
-    println!("{:?}", b1.to_vecn());
-    println!("{:?}", v1.left_contract(&b1));
-    println!("{:?}", v2.left_contract(&b1));
+    println!("{:?}", t1);
+    println!("{:?}", t2);
+    println!("{:?}", t1.acos() + t2.acos());
 }

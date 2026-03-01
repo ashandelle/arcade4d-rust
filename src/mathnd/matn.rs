@@ -246,8 +246,49 @@ impl Mul for MatN {
         }
     }
 }
+impl<'a> Mul<MatN> for &'a MatN {
+    type Output = MatN;
+    fn mul(self, m: MatN) -> MatN {
+        let t: MatN = m.transpose();
+        MatN {
+            e: self.e.iter()
+                .map(|x| &t * x)
+                .collect(),
+        }
+    }
+}
+impl<'b> Mul<&'b MatN> for MatN {
+    type Output = MatN;
+    fn mul(self, m: &MatN) -> MatN {
+        let t: MatN = m.transpose();
+        MatN {
+            e: self.e.iter()
+                .map(|x| &t * x)
+                .collect(),
+        }
+    }
+}
+impl<'a,'b> Mul<&'b MatN> for &'a MatN {
+    type Output = MatN;
+    fn mul(self, m: &MatN) -> MatN {
+        let t: MatN = m.transpose();
+        MatN {
+            e: self.e.iter()
+                .map(|x| &t * x)
+                .collect(),
+        }
+    }
+}
 
 impl MatN {
+    // Dot product
+    pub fn dot(&self, m: &MatN) -> f64 {
+        (self.e).iter()
+                .zip((m.e).iter())
+                .map(|(x, y)| x.dot(&y))
+                .sum::<f64>()
+    }
+
     // To BiVecN
     pub fn to_bivecn(self) -> BiVecN {
         BiVecN {
@@ -256,6 +297,9 @@ impl MatN {
     }
 
     // Orthonormalize
+    // pub fn orthonormalize(&self) -> MatN {
+        
+    // }
 
     // Transpose
     pub fn transpose(&self) -> MatN {
@@ -281,6 +325,89 @@ impl MatN {
     }
 
     // Inverse
+    pub fn inverse(&self) -> MatN {
+        let dim = self.e.len();
+        let mut inv = MatN::zero(dim);
+        for i in 0..dim {
+            inv.e[i].e[i] = (1.0 / self.e[i].e[i]).clamp(-1e8, 1e8);
+            if inv.e[i].e[i].is_nan() {
+                inv.e[i].e[i] = 0.0;
+            }
+        }
+
+        let mut iter = 0;
+        let mut len: f64 = 1.0;
+        let I = MatN::identity(dim);
+
+        while (len > 1e-8) && (iter < 100) {
+            let mut id = &inv * self;
+            inv = 2.0 * &inv - &id * &inv;
+
+            // let mut nan = false;
+            // for i in 0..dim {
+            //     for j in 0..dim {
+            //         if inv.e[i].e[j].is_nan() {
+            //             nan = true;
+            //         }
+            //     }
+            // }
+            // if nan {
+            //     println!("id: {:?}", id);
+            //     println!("inv: {:?}", inv);
+            // }
+
+            id = id - &I;
+            len = id.dot(&id) / ((dim*dim) as f64);
+            // if len < 1e-8 { break; }
+            iter+=1;
+        }
+
+        inv
+    }
+
+    // Matrix rotating v1 to v2
+    pub fn from_vecn(v1: &VecN, v2: &VecN) -> Self {
+        let dim = v1.e.len();
+        let v3 = v1 + v2;
+        MatN::identity(dim) -
+        Self::mult_transpose_vecn(&v3, &v3) / (1.0 + &v1.dot(&v2)) +
+        2.0 * Self::mult_transpose_vecn(&v2, &v1)
+    }
+
+    // Matrix rotating v1 to v2
+    pub fn from_vecn_interpolate(v1: &VecN, v2: &VecN, t: f64) -> Self {
+        let dim = v1.e.len();
+        let v3 = v1 + v2;
+
+        let mut cos = v1.dot(&v2).clamp(-1.0, 1.0);
+        let mut sin = (1.0 - cos*cos).sqrt();
+        let theta = cos.acos();
+
+        if theta.abs() < 1e-8 {
+            return MatN::identity(dim);
+        }
+
+        let mut c = -Self::mult_transpose_vecn(&v3, &v3) / (1.0 + cos);
+        let mut s = 2.0 * Self::mult_transpose_vecn(&v2, &v1);
+
+        c = c / (1.0 - cos);
+        s = s / sin;
+
+        cos = (theta * t).cos();
+        sin = (theta * t).sin();
+
+        c = c * (1.0 - cos);
+        s = s * sin;
+
+        MatN::identity(dim) + c + s
+    }
+
+    // Matrix formed by v1 * v2^T
+    pub fn mult_transpose_vecn(v1: &VecN, v2: &VecN) -> Self {
+        MatN {
+            e: (v1.e).iter().map(|x| *x * v2).collect(),
+        }
+    }
 
     // Zero
     pub fn zero(dim: usize) -> Self {

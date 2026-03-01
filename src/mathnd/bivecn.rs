@@ -147,10 +147,7 @@ impl<'a> Div<f64> for &'a BiVecN {
 impl BiVecN {
     // Dot product
     pub fn dot(&self, v: &BiVecN) -> f64 {
-        (self.m.e).iter()
-                .zip((v.m.e).iter())
-                .map(|(x, y)| x.dot(&y))
-                .sum::<f64>() / 2.0
+        self.m.dot(&v.m) / 2.0
     }
 
     // Skew
