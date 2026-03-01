@@ -393,6 +393,12 @@ impl MatN {
         }
     }
 
+    pub fn mult_transpose_bivecn(&self, v: &BiVecN) -> BiVecN {
+        BiVecN {
+            m: (self.transpose() * &v.m) * self,
+        }
+    }
+
     // Inverse
     pub fn inverse(&self) -> MatN {
         let dim = self.e.len();

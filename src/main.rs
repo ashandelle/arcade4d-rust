@@ -4,6 +4,7 @@ use rand::Rng;
 use rand_distr::StandardNormal;
 
 mod mathnd;
+mod physics;
 
 fn main() {
     let mut rng = rand::rng();
