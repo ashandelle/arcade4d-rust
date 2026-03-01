@@ -224,16 +224,38 @@ impl<'a,'b> Mul<&'b VecN> for &'a MatN {
 }
 
 // BiVector multiplication
-// impl Mul<BiVecN> for MatN {
-//     type Output = MatN;
-//     // fn mul(self, v: VecN) -> VecN {
-//     //     MatN {
-//     //         e: self.e.iter()
-//     //             .map(|x| x * s)
-//     //             .collect(),
-//     //     }
-//     // }
-// }
+impl Mul<BiVecN> for MatN {
+    type Output = BiVecN;
+    fn mul(self, v: BiVecN) -> BiVecN {
+        BiVecN {
+            m: (&self * &v.m) * &self.transpose(),
+        }
+    }
+}
+impl<'a> Mul<BiVecN> for &'a MatN {
+    type Output = BiVecN;
+    fn mul(self, v: BiVecN) -> BiVecN {
+        BiVecN {
+            m: (self * &v.m) * &self.transpose(),
+        }
+    }
+}
+impl<'b> Mul<&'b BiVecN> for MatN {
+    type Output = BiVecN;
+    fn mul(self, v: &BiVecN) -> BiVecN {
+        BiVecN {
+            m: (&self * &v.m) * &self.transpose(),
+        }
+    }
+}
+impl<'a,'b> Mul<&'b BiVecN> for &'a MatN {
+    type Output = BiVecN;
+    fn mul(self, v: &BiVecN) -> BiVecN {
+        BiVecN {
+            m: (self * &v.m) * &self.transpose(),
+        }
+    }
+}
 
 // Matrix multiplication
 impl Mul for MatN {
@@ -394,10 +416,13 @@ impl MatN {
     // Matrix rotating v1 to v2
     pub fn from_vecn(v1: &VecN, v2: &VecN) -> Self {
         let dim = v1.e.len();
-        let v3 = v1 + v2;
-        MatN::identity(dim) -
-        Self::mult_transpose_vecn(&v3, &v3) / (1.0 + &v1.dot(&v2)) +
-        2.0 * Self::mult_transpose_vecn(&v2, &v1)
+        let n1 = v1.normalize();
+        let n2 = v2.normalize();
+        let v3 = &n1 + &n2;
+        (MatN::identity(dim) -
+        Self::mult_transpose_vecn(&v3, &v3) / (1.0 + &n1.dot(&n2)) +
+        2.0 * Self::mult_transpose_vecn(&n2, &n1)) *
+        (v2.length() / v1.length())
     }
 
     // Matrix rotating v1 to v2
