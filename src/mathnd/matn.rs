@@ -1,5 +1,6 @@
 use super::{BiVecN, VecN};
 use std::ops::{Neg, Add, Sub, Mul, Div};
+use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct MatN {
@@ -296,10 +297,56 @@ impl MatN {
         }.skew()
     }
 
+    // Normalize basis vectors
+    pub fn normalize_basis(&self) -> MatN {
+        MatN {
+            e: (&self.e).iter()
+                .map(|x| x.normalize())
+                .collect(),
+        }
+    }
+
     // Orthonormalize
-    // pub fn orthonormalize(&self) -> MatN {
-        
-    // }
+    pub fn orthonormalize(&self) -> MatN {
+        let mut mat = self.normalize_basis();
+        let dim = mat.e.len();
+        let n = cmp::max(dim - 1, 2) as f64;
+
+        let mut dot = 1.0;
+
+        while dot > f64::EPSILON {
+            let mut tmp = mat.clone();
+
+            dot = 0.0;
+            for i in 0..dim {
+                for j in (i+1)..dim {
+                    let d = mat.e[i].dot(&mat.e[j]);
+                    dot += d.abs();
+                    tmp.e[i] = &tmp.e[i] - (&mat.e[j] * d / n);
+                    tmp.e[j] = &tmp.e[j] - (&mat.e[i] * d / n);
+                }
+            }
+            dot /= ((dim*dim - dim) / 2) as f64;
+
+            mat = tmp.normalize_basis();
+        }
+
+        mat
+    }
+
+    // Length
+    pub fn length(&self) -> f64 {
+        (self.e).iter()
+                .map(|x| x.length_sqr())
+                .sum::<f64>().sqrt()
+    }
+
+    // Length squared
+    pub fn length_sqr(&self) -> f64 {
+        (self.e).iter()
+                .map(|x| x.length_sqr())
+                .sum::<f64>()
+    }
 
     // Transpose
     pub fn transpose(&self) -> MatN {
@@ -327,38 +374,17 @@ impl MatN {
     // Inverse
     pub fn inverse(&self) -> MatN {
         let dim = self.e.len();
-        let mut inv = MatN::zero(dim);
-        for i in 0..dim {
-            inv.e[i].e[i] = (1.0 / self.e[i].e[i]).clamp(-1e8, 1e8);
-            if inv.e[i].e[i].is_nan() {
-                inv.e[i].e[i] = 0.0;
-            }
-        }
+        let mut inv = MatN::identity(dim);
 
         let mut iter = 0;
         let mut len: f64 = 1.0;
         let I = MatN::identity(dim);
 
-        while (len > 1e-8) && (iter < 100) {
+        while (len > f64::EPSILON) && (iter < 100) {
             let mut id = &inv * self;
             inv = 2.0 * &inv - &id * &inv;
-
-            // let mut nan = false;
-            // for i in 0..dim {
-            //     for j in 0..dim {
-            //         if inv.e[i].e[j].is_nan() {
-            //             nan = true;
-            //         }
-            //     }
-            // }
-            // if nan {
-            //     println!("id: {:?}", id);
-            //     println!("inv: {:?}", inv);
-            // }
-
             id = id - &I;
             len = id.dot(&id) / ((dim*dim) as f64);
-            // if len < 1e-8 { break; }
             iter+=1;
         }
 
@@ -375,32 +401,32 @@ impl MatN {
     }
 
     // Matrix rotating v1 to v2
-    pub fn from_vecn_interpolate(v1: &VecN, v2: &VecN, t: f64) -> Self {
-        let dim = v1.e.len();
-        let v3 = v1 + v2;
+    // pub fn from_vecn_interpolate(v1: &VecN, v2: &VecN, t: f64) -> Self {
+    //     let dim = v1.e.len();
+    //     let v3 = v1 + v2;
 
-        let mut cos = v1.dot(&v2).clamp(-1.0, 1.0);
-        let mut sin = (1.0 - cos*cos).sqrt();
-        let theta = cos.acos();
+    //     let mut cos = v1.dot(&v2).clamp(-1.0, 1.0);
+    //     let mut sin = (1.0 - cos*cos).sqrt();
+    //     let theta = cos.acos();
 
-        if theta.abs() < 1e-8 {
-            return MatN::identity(dim);
-        }
+    //     if theta.abs() < 1e-8 {
+    //         return MatN::identity(dim);
+    //     }
 
-        let mut c = -Self::mult_transpose_vecn(&v3, &v3) / (1.0 + cos);
-        let mut s = 2.0 * Self::mult_transpose_vecn(&v2, &v1);
+    //     let mut c = -Self::mult_transpose_vecn(&v3, &v3) / (1.0 + cos);
+    //     let mut s = 2.0 * Self::mult_transpose_vecn(&v2, &v1);
 
-        c = c / (1.0 - cos);
-        s = s / sin;
+    //     c = c / (1.0 - cos);
+    //     s = s / sin;
 
-        cos = (theta * t).cos();
-        sin = (theta * t).sin();
+    //     cos = (theta * t).cos();
+    //     sin = (theta * t).sin();
 
-        c = c * (1.0 - cos);
-        s = s * sin;
+    //     c = c * (1.0 - cos);
+    //     s = s * sin;
 
-        MatN::identity(dim) + c + s
-    }
+    //     MatN::identity(dim) + c + s
+    // }
 
     // Matrix formed by v1 * v2^T
     pub fn mult_transpose_vecn(v1: &VecN, v2: &VecN) -> Self {

@@ -1,3 +1,4 @@
+
 use super::{MatN, VecN};
 use std::ops::{Neg, Add, Sub, Mul, Div};
 
@@ -148,6 +149,16 @@ impl BiVecN {
     // Dot product
     pub fn dot(&self, v: &BiVecN) -> f64 {
         self.m.dot(&v.m) / 2.0
+    }
+
+    // Length
+    pub fn length(&self) -> f64 {
+        (self.m.length_sqr() / 2.0).sqrt()
+    }
+
+    // Length squared
+    pub fn length_sqr(&self) -> f64 {
+        self.m.length_sqr() / 2.0
     }
 
     // Skew

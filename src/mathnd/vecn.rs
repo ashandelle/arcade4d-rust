@@ -276,7 +276,7 @@ impl VecN {
     }
 
     // Normalize
-    pub fn normalize(self) -> VecN {
+    pub fn normalize(&self) -> VecN {
         let mag: f64 = (self.e).iter()
                                 .map(|x| x*x)
                                 .sum::<f64>().sqrt();
@@ -285,6 +285,20 @@ impl VecN {
                     .map(|x| x / mag)
                     .collect(),
         }
+    }
+
+    // Length
+    pub fn length(&self) -> f64 {
+        (self.e).iter()
+                .map(|x| x*x)
+                .sum::<f64>().sqrt()
+    }
+
+    // Length squared
+    pub fn length_sqr(&self) -> f64 {
+        (self.e).iter()
+                .map(|x| x*x)
+                .sum::<f64>()
     }
 
     // Zero
