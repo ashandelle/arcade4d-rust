@@ -1,3 +1,5 @@
+use noisy_float::prelude::*;
+
 use super::{BiVecN, VecN};
 use std::ops::{Neg, Add, Sub, Mul, Div};
 use std::cmp;
@@ -118,7 +120,7 @@ impl<'a,'b> Sub<&'b MatN> for &'a MatN {
 }
 
 // Scalar multiplication
-impl Mul<MatN> for f64 {
+impl Mul<MatN> for N64 {
     type Output = MatN;
     fn mul(self, v: MatN) -> MatN {
         MatN {
@@ -128,7 +130,7 @@ impl Mul<MatN> for f64 {
         }
     }
 }
-impl<'b> Mul<&'b MatN> for f64 {
+impl<'b> Mul<&'b MatN> for N64 {
     type Output = MatN;
     fn mul(self, v: &MatN) -> MatN {
         MatN {
@@ -138,9 +140,9 @@ impl<'b> Mul<&'b MatN> for f64 {
         }
     }
 }
-impl Mul<f64> for MatN {
+impl Mul<N64> for MatN {
     type Output = MatN;
-    fn mul(self, s: f64) -> MatN {
+    fn mul(self, s: N64) -> MatN {
         MatN {
             e: self.e.iter()
                 .map(|x| x * s)
@@ -148,9 +150,9 @@ impl Mul<f64> for MatN {
         }
     }
 }
-impl<'a> Mul<f64> for &'a MatN {
+impl<'a> Mul<N64> for &'a MatN {
     type Output = MatN;
-    fn mul(self, s: f64) -> MatN {
+    fn mul(self, s: N64) -> MatN {
         MatN {
             e: self.e.iter()
                 .map(|x| x * s)
@@ -160,9 +162,9 @@ impl<'a> Mul<f64> for &'a MatN {
 }
 
 // Scalar division
-impl Div<f64> for MatN {
+impl Div<N64> for MatN {
     type Output = MatN;
-    fn div(self, s: f64) -> MatN {
+    fn div(self, s: N64) -> MatN {
         MatN {
             e: self.e.iter()
                 .map(|x| x / s)
@@ -170,9 +172,9 @@ impl Div<f64> for MatN {
         }
     }
 }
-impl<'a> Div<f64> for &'a MatN {
+impl<'a> Div<N64> for &'a MatN {
     type Output = MatN;
-    fn div(self, s: f64) -> MatN {
+    fn div(self, s: N64) -> MatN {
         MatN {
             e: self.e.iter()
                 .map(|x| x / s)
@@ -305,11 +307,11 @@ impl<'a,'b> Mul<&'b MatN> for &'a MatN {
 
 impl MatN {
     // Dot product
-    pub fn dot(&self, m: &MatN) -> f64 {
+    pub fn dot(&self, m: &MatN) -> N64 {
         (self.e).iter()
                 .zip((m.e).iter())
                 .map(|(x, y)| x.dot(&y))
-                .sum::<f64>()
+                .sum::<N64>()
     }
 
     // To BiVecN
@@ -332,14 +334,14 @@ impl MatN {
     pub fn orthonormalize(&self) -> MatN {
         let mut mat = self.normalize_basis();
         let dim = mat.e.len();
-        let n = cmp::max(dim - 1, 2) as f64;
+        let n = n64((dim - 1).max(2) as f64);
 
-        let mut dot = 1.0;
+        let mut dot = n64(1.0);
 
-        while dot > f64::EPSILON {
+        while dot > N64::epsilon() {
             let mut tmp = mat.clone();
 
-            dot = 0.0;
+            dot = n64(0.0);
             for i in 0..dim {
                 for j in (i+1)..dim {
                     let d = mat.e[i].dot(&mat.e[j]);
@@ -348,7 +350,7 @@ impl MatN {
                     tmp.e[j] = &tmp.e[j] - (&mat.e[i] * d / n);
                 }
             }
-            dot /= ((dim*dim - dim) / 2) as f64;
+            dot /= n64(((dim*dim - dim) / 2) as f64);
 
             mat = tmp.normalize_basis();
         }
@@ -357,24 +359,24 @@ impl MatN {
     }
 
     // Length
-    pub fn length(&self) -> f64 {
+    pub fn length(&self) -> N64 {
         (self.e).iter()
                 .map(|x| x.length_sqr())
-                .sum::<f64>().sqrt()
+                .sum::<N64>().sqrt()
     }
 
     // Length squared
-    pub fn length_sqr(&self) -> f64 {
+    pub fn length_sqr(&self) -> N64 {
         (self.e).iter()
                 .map(|x| x.length_sqr())
-                .sum::<f64>()
+                .sum::<N64>()
     }
 
     // Transpose
     pub fn transpose(&self) -> MatN {
         let mut t: Vec<VecN> = Vec::new();
         for i in 0..self.e[0].e.len() {
-            let mut v: Vec<f64> = Vec::new();
+            let mut v: Vec<N64> = Vec::new();
             for j in 0..self.e.len() {
                 v.push(self.e[j].e[i]);
             }
@@ -405,14 +407,14 @@ impl MatN {
         let mut inv = MatN::identity(dim);
 
         let mut iter = 0;
-        let mut len: f64 = 1.0;
+        let mut len: N64 = n64(1.0);
         let I = MatN::identity(dim);
 
-        while (len > f64::EPSILON) && (iter < 100) {
+        while (len > N64::epsilon()) && (iter < 100) {
             let mut id = &inv * self;
-            inv = 2.0 * &inv - &id * &inv;
+            inv = n64(2.0) * &inv - &id * &inv;
             id = id - &I;
-            len = id.dot(&id) / ((dim*dim) as f64);
+            len = id.dot(&id) / n64((dim*dim) as f64);
             iter+=1;
         }
 
@@ -426,13 +428,13 @@ impl MatN {
         let n2 = v2.normalize();
         let v3 = &n1 + &n2;
         (MatN::identity(dim) -
-        Self::mult_transpose_vecn(&v3, &v3) / (1.0 + &n1.dot(&n2)) +
-        2.0 * Self::mult_transpose_vecn(&n2, &n1)) *
+        Self::mult_transpose_vecn(&v3, &v3) / (n64(1.0) + &n1.dot(&n2)) +
+        n64(2.0) * Self::mult_transpose_vecn(&n2, &n1)) *
         (v2.length() / v1.length())
     }
 
     // Matrix rotating v1 to v2
-    // pub fn from_vecn_interpolate(v1: &VecN, v2: &VecN, t: f64) -> Self {
+    // pub fn from_vecn_interpolate(v1: &VecN, v2: &VecN, t: N64) -> Self {
     //     let dim = v1.e.len();
     //     let v3 = v1 + v2;
 
@@ -477,7 +479,7 @@ impl MatN {
     pub fn identity(dim: usize) -> Self {
         let mut mat = Self::zero(dim);
         for i in 0..dim {
-            mat.e[i].e[i] = 1.0;
+            mat.e[i].e[i] = n64(1.0);
         }
         mat
     }

@@ -1,9 +1,11 @@
+use noisy_float::prelude::*;
+
 use crate::{mathnd::{BiVecN, MatN, VecN}, physics::Body};
 
 #[derive(Clone)]
 pub enum Collider {
     HalfSpace { normal: VecN },
-    Sphere { radius: f64 },
+    Sphere { radius: N64 },
     // Rotatope { rota: Rotatope },
     // Tegum { parts: Vec<Collider> },
     // Prism { parts: Vec<Collider> },
@@ -15,7 +17,7 @@ pub enum Collider {
 #[derive(Debug)]
 pub struct CollisionManifold {
     pub normal: VecN,
-    pub depth: f64,
+    pub depth: N64,
     pub contacts: Vec<VecN>,
 }
 
@@ -116,7 +118,7 @@ impl CollisionDetection {
                 if center_distance < *radius {
                     Some(CollisionManifold {
                         normal: normal.clone(),
-                        depth: radius - center_distance,
+                        depth: *radius - center_distance,
                         contacts: vec![&b.pos.linear - *radius * normal],
                     })
                 } else {
@@ -204,7 +206,7 @@ impl CollisionDetection {
                 Collider::Sphere { radius: radius_b },
             ) => {
                 let displacement = &b.pos.linear - &a.pos.linear;
-                let depth = radius_a + radius_b - displacement.length();
+                let depth = *radius_a + *radius_b - displacement.length();
                 if depth > 0.0 {
                     let normal = displacement.normalize();
                     Some(CollisionManifold {

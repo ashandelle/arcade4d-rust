@@ -1,9 +1,11 @@
+use noisy_float::prelude::*;
+
 use super::{BiVecN, MatN};
 use std::ops::{Neg, Add, Sub, Mul, Div, BitXor};
 
 #[derive(Debug, Clone)]
 pub struct VecN {
-    pub e: Vec<f64>,
+    pub e: Vec<N64>,
 }
 
 // Unary minus
@@ -31,7 +33,7 @@ impl Add for VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x + y)
+                       .map(|(x, y)| *x + *y)
                        .collect(),
         }
     }
@@ -42,7 +44,7 @@ impl<'a> Add<VecN> for &'a VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x + y)
+                       .map(|(x, y)| *x + *y)
                        .collect(),
         }
     }
@@ -53,7 +55,7 @@ impl<'b> Add<&'b VecN> for VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x + y)
+                       .map(|(x, y)| *x + *y)
                        .collect(),
         }
     }
@@ -64,7 +66,7 @@ impl<'a,'b> Add<&'b VecN> for &'a VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x + y)
+                       .map(|(x, y)| *x + *y)
                        .collect(),
         }
     }
@@ -77,7 +79,7 @@ impl Sub for VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x - y)
+                       .map(|(x, y)| *x - *y)
                        .collect(),
         }
     }
@@ -88,7 +90,7 @@ impl<'a> Sub<VecN> for &'a VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x - y)
+                       .map(|(x, y)| *x - *y)
                        .collect(),
         }
     }
@@ -99,7 +101,7 @@ impl<'b> Sub<&'b VecN> for VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x - y)
+                       .map(|(x, y)| *x - *y)
                        .collect(),
         }
     }
@@ -110,14 +112,14 @@ impl<'a,'b> Sub<&'b VecN> for &'a VecN {
         VecN {
             e: (self.e).iter()
                        .zip((v.e).iter())
-                       .map(|(x, y)| x - y)
+                       .map(|(x, y)| *x - *y)
                        .collect(),
         }
     }
 }
 
 // Scalar multiplication
-impl Mul<VecN> for f64 {
+impl Mul<VecN> for N64 {
     type Output = VecN;
     fn mul(self, v: VecN) -> VecN {
         VecN {
@@ -127,7 +129,7 @@ impl Mul<VecN> for f64 {
         }
     }
 }
-impl<'b> Mul<&'b VecN> for f64 {
+impl<'b> Mul<&'b VecN> for N64 {
     type Output = VecN;
     fn mul(self, v: &VecN) -> VecN {
         VecN {
@@ -137,44 +139,44 @@ impl<'b> Mul<&'b VecN> for f64 {
         }
     }
 }
-impl Mul<f64> for VecN {
+impl Mul<N64> for VecN {
     type Output = VecN;
-    fn mul(self, s: f64) -> VecN {
+    fn mul(self, s: N64) -> VecN {
         VecN {
             e: self.e.iter()
-                .map(|x| x * s)
+                .map(|x| *x * s)
                 .collect(),
         }
     }
 }
-impl<'a> Mul<f64> for &'a VecN {
+impl<'a> Mul<N64> for &'a VecN {
     type Output = VecN;
-    fn mul(self, s: f64) -> VecN {
+    fn mul(self, s: N64) -> VecN {
         VecN {
             e: self.e.iter()
-                .map(|x| x * s)
+                .map(|x| *x * s)
                 .collect(),
         }
     }
 }
 
 // Scalar division
-impl Div<f64> for VecN {
+impl Div<N64> for VecN {
     type Output = VecN;
-    fn div(self, s: f64) -> VecN {
+    fn div(self, s: N64) -> VecN {
         VecN {
             e: self.e.iter()
-                .map(|x| x / s)
+                .map(|x| *x / s)
                 .collect(),
         }
     }
 }
-impl<'a> Div<f64> for &'a VecN {
+impl<'a> Div<N64> for &'a VecN {
     type Output = VecN;
-    fn div(self, s: f64) -> VecN {
+    fn div(self, s: N64) -> VecN {
         VecN {
             e: self.e.iter()
-                .map(|x| x / s)
+                .map(|x| *x / s)
                 .collect(),
         }
     }
@@ -187,7 +189,7 @@ impl BitXor for VecN {
         let mut vecs: Vec<VecN> = Vec::new();
 
         for i in 0..v.e.len() {
-            let mut vec: Vec<f64> = Vec::new();
+            let mut vec: Vec<N64> = Vec::new();
             for j in 0..v.e.len() {
                 vec.push(
                     self.e[i] * v.e[j] - self.e[j] * v.e[i]
@@ -207,7 +209,7 @@ impl<'a> BitXor<VecN> for &'a VecN {
         let mut vecs: Vec<VecN> = Vec::new();
 
         for i in 0..v.e.len() {
-            let mut vec: Vec<f64> = Vec::new();
+            let mut vec: Vec<N64> = Vec::new();
             for j in 0..v.e.len() {
                 vec.push(
                     self.e[i] * v.e[j] - self.e[j] * v.e[i]
@@ -227,7 +229,7 @@ impl<'b> BitXor<&'b VecN> for VecN {
         let mut vecs: Vec<VecN> = Vec::new();
 
         for i in 0..v.e.len() {
-            let mut vec: Vec<f64> = Vec::new();
+            let mut vec: Vec<N64> = Vec::new();
             for j in 0..v.e.len() {
                 vec.push(
                     self.e[i] * v.e[j] - self.e[j] * v.e[i]
@@ -247,7 +249,7 @@ impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
         let mut vecs: Vec<VecN> = Vec::new();
 
         for i in 0..v.e.len() {
-            let mut vec: Vec<f64> = Vec::new();
+            let mut vec: Vec<N64> = Vec::new();
             for j in 0..v.e.len() {
                 vec.push(
                     self.e[i] * v.e[j] - self.e[j] * v.e[i]
@@ -264,7 +266,7 @@ impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
 
 impl VecN {
     // Dot product
-    pub fn dot(&self, v: &VecN) -> f64 {
+    pub fn dot(&self, v: &VecN) -> N64 {
         (self.e).iter()
                 .zip((v.e).iter())
                 .map(|(&x, &y)| x * y)
@@ -277,28 +279,28 @@ impl VecN {
 
     // Normalize
     pub fn normalize(&self) -> VecN {
-        let mag: f64 = (self.e).iter()
-                                .map(|x| x*x)
-                                .sum::<f64>().sqrt();
+        let mag: N64 = (self.e).iter()
+                                .map(|x| *x*x)
+                                .sum::<N64>().sqrt();
         VecN {
             e: self.e.iter()
-                    .map(|x| x / mag)
+                    .map(|x| *x / mag)
                     .collect(),
         }
     }
 
     // Length
-    pub fn length(&self) -> f64 {
+    pub fn length(&self) -> N64 {
         (self.e).iter()
-                .map(|x| x*x)
-                .sum::<f64>().sqrt()
+                .map(|x| *x*x)
+                .sum::<N64>().sqrt()
     }
 
     // Length squared
-    pub fn length_sqr(&self) -> f64 {
+    pub fn length_sqr(&self) -> N64 {
         (self.e).iter()
-                .map(|x| x*x)
-                .sum::<f64>()
+                .map(|x| *x*x)
+                .sum::<N64>()
     }
 
     pub fn orthonormal_basis(&self) -> Vec<VecN> {
@@ -307,7 +309,7 @@ impl VecN {
         let normal = self.normalize();
 
         let mut vecs: Vec<VecN> = Vec::new();
-        let mut maxdot: f64 = 0.0;
+        let mut maxdot: N64 = n64(0.0);
         let mut maxi: usize = 0;
 
         for i in 0..dim {
@@ -334,14 +336,14 @@ impl VecN {
     // Zero
     pub fn zero(dim: usize) -> Self {
         Self {
-            e: vec![0.0; dim],
+            e: vec![n64(0.0); dim],
         }
     }
 
     // Basis element
     pub fn basis(dim: usize, element: usize) -> Self {
         let mut vec = Self::zero(dim);
-        vec.e[element] = 1.0;
+        vec.e[element] = n64(1.0);
         vec
     }
 }

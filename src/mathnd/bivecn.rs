@@ -1,3 +1,4 @@
+use noisy_float::prelude::*;
 
 use super::{MatN, VecN};
 use std::ops::{Neg, Add, Sub, Mul, Div};
@@ -94,7 +95,7 @@ impl<'a,'b> Sub<&'b BiVecN> for &'a BiVecN {
 }
 
 // Scalar multiplication
-impl Mul<BiVecN> for f64 {
+impl Mul<BiVecN> for N64 {
     type Output = BiVecN;
     fn mul(self, v: BiVecN) -> BiVecN {
         BiVecN {
@@ -102,7 +103,7 @@ impl Mul<BiVecN> for f64 {
         }
     }
 }
-impl<'b> Mul<&'b BiVecN> for f64 {
+impl<'b> Mul<&'b BiVecN> for N64 {
     type Output = BiVecN;
     fn mul(self, v: &BiVecN) -> BiVecN {
         BiVecN {
@@ -110,17 +111,17 @@ impl<'b> Mul<&'b BiVecN> for f64 {
         }
     }
 }
-impl Mul<f64> for BiVecN {
+impl Mul<N64> for BiVecN {
     type Output = BiVecN;
-    fn mul(self, s: f64) -> BiVecN {
+    fn mul(self, s: N64) -> BiVecN {
         BiVecN {
             m: self.m * s,
         }
     }
 }
-impl<'a> Mul<f64> for &'a BiVecN {
+impl<'a> Mul<N64> for &'a BiVecN {
     type Output = BiVecN;
-    fn mul(self, s: f64) -> BiVecN {
+    fn mul(self, s: N64) -> BiVecN {
         BiVecN {
             m: &self.m * s,
         }
@@ -128,17 +129,17 @@ impl<'a> Mul<f64> for &'a BiVecN {
 }
 
 // Scalar division
-impl Div<f64> for BiVecN {
+impl Div<N64> for BiVecN {
     type Output = BiVecN;
-    fn div(self, s: f64) -> BiVecN {
+    fn div(self, s: N64) -> BiVecN {
         BiVecN {
             m: self.m / s,
         }
     }
 }
-impl<'a> Div<f64> for &'a BiVecN {
+impl<'a> Div<N64> for &'a BiVecN {
     type Output = BiVecN;
-    fn div(self, s: f64) -> BiVecN {
+    fn div(self, s: N64) -> BiVecN {
         BiVecN {
             m: &self.m / s,
         }
@@ -147,28 +148,28 @@ impl<'a> Div<f64> for &'a BiVecN {
 
 impl BiVecN {
     // Dot product
-    pub fn dot(&self, v: &BiVecN) -> f64 {
+    pub fn dot(&self, v: &BiVecN) -> N64 {
         self.m.dot(&v.m) / 2.0
     }
 
     // Length
-    pub fn length(&self) -> f64 {
+    pub fn length(&self) -> N64 {
         (self.m.length_sqr() / 2.0).sqrt()
     }
 
     // Length squared
-    pub fn length_sqr(&self) -> f64 {
+    pub fn length_sqr(&self) -> N64 {
         self.m.length_sqr() / 2.0
     }
 
     // Skew
     pub fn skew(&self) -> BiVecN {
         BiVecN {
-            m: (&self.m - &self.m.transpose()) / 2.0,
+            m: (&self.m - &self.m.transpose()) / n64(2.0),
         }
     }
 
-    pub fn get_ij(&self, i: usize, j: usize) -> f64 {
+    pub fn get_ij(&self, i: usize, j: usize) -> N64 {
         self.m.e[i].e[j]
     }
 
@@ -178,7 +179,7 @@ impl BiVecN {
     }
 
     pub fn to_vecn(&self) -> VecN {
-        let mut v: Vec<f64> = Vec::new();
+        let mut v: Vec<N64> = Vec::new();
         let n = self.m.e.len();
 
         for i in 0..n {
@@ -203,8 +204,8 @@ impl BiVecN {
     pub fn basis(dim: usize, i: usize, j: usize) -> Self {
         let mut mat = MatN::zero(dim);
         if i != j {
-            mat.e[i].e[j] = 1.0;
-            mat.e[j].e[i] = -1.0;
+            mat.e[i].e[j] = n64(1.0);
+            mat.e[j].e[i] = n64(-1.0);
         }
         Self {
             m: mat,

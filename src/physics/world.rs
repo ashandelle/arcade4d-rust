@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use crate::physics::{Body, CollisionConstraint, CollisionDetection};
+use noisy_float::prelude::*;
+
+use crate::{mathnd::VecN, physics::{Body, CollisionConstraint, CollisionDetection}};
 
 pub struct Object {
     pub body: Body,
@@ -10,17 +12,20 @@ pub struct Object {
 pub struct World {
     pub objects: Vec<Object>,
     pub collision: CollisionDetection,
+
+    pub gravity: VecN,
 }
 
 impl World {
-    pub fn new() -> Self {
+    pub fn new(dim: usize) -> Self {
         Self {
             objects: Vec::new(),
             collision: CollisionDetection::new(),
+            gravity: VecN::zero(dim),
         }
     }
 
-    pub fn update(&mut self, dt: f64) {
+    pub fn update(&mut self, dt: N64) {
         let mut collisions = Vec::new();
         let mut mass_adjustments = HashMap::new();
 
@@ -50,9 +55,9 @@ impl World {
                 CollisionConstraint::new(
                     manifold,
                     &self.objects[i].body,
-                    mass_adjustments[&i] as f64,
+                    n64(mass_adjustments[&i] as f64),
                     &self.objects[j].body,
-                    mass_adjustments[&j] as f64,
+                    n64(mass_adjustments[&j] as f64),
                 ),
             ));
         }
@@ -67,7 +72,7 @@ impl World {
         }
 
         for object in &mut self.objects {
-            object.body.step(dt);
+            object.body.step(&self.gravity, dt);
         }
     }
 

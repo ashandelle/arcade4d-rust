@@ -6,3 +6,4 @@ mod world;
 pub use body::*;
 pub use collider::*;
 pub use collision::*;
+pub use world::*;

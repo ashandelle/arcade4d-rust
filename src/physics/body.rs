@@ -1,8 +1,10 @@
+use noisy_float::prelude::*;
+
 use crate::{mathnd::{BiVecN, MatN, VecN}, physics::Collider};
 
 #[derive(Debug, Clone)]
 pub struct Material {
-    pub restitution: f64,
+    pub restitution: N64,
 }
 
 #[derive(Debug, Clone)]
@@ -19,7 +21,7 @@ pub struct Position {
 
 #[derive(Debug, Clone)]
 pub enum Inertia {
-    Scalar {s: f64},
+    Scalar {s: N64},
     BiVec {b: BiVecN},
     // Tensor {t: BiMatN},
     Immovable,
@@ -27,7 +29,7 @@ pub enum Inertia {
 
 #[derive(Clone)]
 pub struct Body {
-    pub mass: f64,
+    pub mass: N64,
     pub inertia: Inertia,
     pub material: Material,
     pub stationary: bool,
@@ -53,10 +55,10 @@ impl Body {
         }
     }
 
-    pub fn step(&mut self, dt: f64) {
+    pub fn step(&mut self, gravity: &VecN, dt: N64) {
         if !self.stationary {
             // apply gravity
-            // self.vel.linear += VecN::unit_y() * (-9.8 * dt);
+            self.mom.linear = &self.mom.linear + gravity * (self.mass * dt);
 
             self.pos.linear = &self.pos.linear + &self.mom.linear / self.mass * dt;
             
@@ -80,7 +82,7 @@ impl Body {
                             .map(|(x, y)| VecN {
                                 e: x.e.iter()
                                     .zip(y.e.iter())
-                                    .map(|(x, y)| x / y)
+                                    .map(|(x, y)| *x / *y)
                                     .collect(),
                             })
                             .collect(),
