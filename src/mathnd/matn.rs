@@ -229,7 +229,7 @@ impl Mul<BiVecN> for MatN {
     fn mul(self, v: BiVecN) -> BiVecN {
         BiVecN {
             m: (&self * &v.m) * &self.transpose(),
-        }
+        }.skew()
     }
 }
 impl<'a> Mul<BiVecN> for &'a MatN {
@@ -237,7 +237,7 @@ impl<'a> Mul<BiVecN> for &'a MatN {
     fn mul(self, v: BiVecN) -> BiVecN {
         BiVecN {
             m: (self * &v.m) * &self.transpose(),
-        }
+        }.skew()
     }
 }
 impl<'b> Mul<&'b BiVecN> for MatN {
@@ -245,7 +245,7 @@ impl<'b> Mul<&'b BiVecN> for MatN {
     fn mul(self, v: &BiVecN) -> BiVecN {
         BiVecN {
             m: (&self * &v.m) * &self.transpose(),
-        }
+        }.skew()
     }
 }
 impl<'a,'b> Mul<&'b BiVecN> for &'a MatN {
@@ -253,7 +253,7 @@ impl<'a,'b> Mul<&'b BiVecN> for &'a MatN {
     fn mul(self, v: &BiVecN) -> BiVecN {
         BiVecN {
             m: (self * &v.m) * &self.transpose(),
-        }
+        }.skew()
     }
 }
 
@@ -396,7 +396,7 @@ impl MatN {
     pub fn mult_transpose_bivecn(&self, v: &BiVecN) -> BiVecN {
         BiVecN {
             m: (self.transpose() * &v.m) * self,
-        }
+        }.skew()
     }
 
     // Inverse

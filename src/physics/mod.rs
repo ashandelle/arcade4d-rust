@@ -1,7 +1,7 @@
 mod body;
 mod collider;
 mod collision;
-mod gjk;
+mod world;
 
 pub use body::*;
 pub use collider::*;

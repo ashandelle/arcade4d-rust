@@ -38,7 +38,7 @@ impl CollisionConstraint {
         // TODO: move this into the Material struct
         let mu = 0.4;
 
-        let tangents = crate::util::orthonormal_basis(normal);
+        let tangents = normal.orthonormal_basis();
 
         let contacts: Vec<_> = contacts
             .into_iter()
@@ -68,8 +68,8 @@ impl CollisionConstraint {
 
                 let inverse_mass_term =
                     |body: &Body,
-                     normal: VecN,
-                     contact: VecN| {
+                     normal: &VecN,
+                     contact: &VecN| {
                         // n' = ~R n R
                         let body_normal = body.world_vec_to_body(&normal);
                         let body_contact = body.world_pos_to_body(&contact);
@@ -78,16 +78,16 @@ impl CollisionConstraint {
                         normal.dot(
                             &body.body_vec_to_world(
                                 &body_contact.left_contract(
-                                        &body.inverse_moment_of_inertia(&(body_contact ^ body_normal))
+                                        &body.inverse_moment_of_inertia(&(&body_contact ^ body_normal))
                                     ),
                             ),
                         )
                     };
 
                 let inv_l_a =
-                    mass_adjustment_a * inverse_mass_term(a, normal, contact);
+                    mass_adjustment_a * inverse_mass_term(a, &normal, &contact);
                 let inv_l_b =
-                    mass_adjustment_b * inverse_mass_term(b, normal, contact);
+                    mass_adjustment_b * inverse_mass_term(b, &normal, &contact);
 
                 let normal_mass =
                     1.0 / (inv_a_mass + inv_b_mass + inv_l_a + inv_l_b);
@@ -95,9 +95,9 @@ impl CollisionConstraint {
                 let mut tangent_mass = vec![0.0; dim-1];
                 for i in 0..(dim-1) {
                     let inv_l_t_a = mass_adjustment_a
-                        * inverse_mass_term(a, tangents[i], contact);
+                        * inverse_mass_term(a, &tangents[i], &contact);
                     let inv_l_t_b = mass_adjustment_b
-                        * inverse_mass_term(b, tangents[i], contact);
+                        * inverse_mass_term(b, &tangents[i], &contact);
 
                     tangent_mass[i] =
                         1.0 / (inv_a_mass + inv_b_mass + inv_l_t_a + inv_l_t_b);
@@ -166,9 +166,9 @@ impl CollisionConstraint {
             // calculate normal impulse
             let rel_vel_normal = rel_vel.dot(&self.normal);
             let lambda = *normal_mass * (-rel_vel_normal + *bias);
-            let prev_impulse = normal_impulse;
-            *normal_impulse = (*prev_impulse + lambda).max(0.0);
-            let impulse = &self.normal * (*normal_impulse - *prev_impulse);
+            let prev_impulse = *normal_impulse;
+            *normal_impulse = (prev_impulse + lambda).max(0.0);
+            let impulse = &self.normal * (*normal_impulse - prev_impulse);
             a.resolve_impulse(&-&impulse, contact);
             b.resolve_impulse(&impulse, contact);
         }

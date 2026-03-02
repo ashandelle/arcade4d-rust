@@ -301,6 +301,36 @@ impl VecN {
                 .sum::<f64>()
     }
 
+    pub fn orthonormal_basis(&self) -> Vec<VecN> {
+        let dim = self.e.len();
+
+        let normal = self.normalize();
+
+        let mut vecs: Vec<VecN> = Vec::new();
+        let mut maxdot: f64 = 0.0;
+        let mut maxi: usize = 0;
+
+        for i in 0..dim {
+            let v = VecN::basis(dim, i);
+            let d = v.dot(&normal);
+            vecs.push(v - &normal * d);
+            if d.abs() > maxdot {
+                maxdot = d.abs();
+                maxi = i;
+            }
+        }
+        vecs.remove(maxi);
+
+        for j in 0..(dim-1) {
+            let vec = vecs[j].normalize();
+            for k in j+1..(dim-1) {
+                vecs[k] = &vecs[k] - (vec.dot(&vecs[k]) * &vec);
+            }
+        }
+
+        vecs
+    }
+
     // Zero
     pub fn zero(dim: usize) -> Self {
         Self {
