@@ -2,7 +2,6 @@ use noisy_float::prelude::*;
 
 use super::{BiVecN, VecN};
 use std::ops::{Neg, Add, Sub, Mul, Div};
-use std::cmp;
 
 #[derive(Debug, Clone)]
 pub struct MatN {

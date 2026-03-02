@@ -51,27 +51,33 @@ fn main() {
         },
     });
 
-    world.objects.push(Object {
-        body: Body {
-            mass: n64(1.0),
-            inertia: Inertia::Scalar { s: n64(1.0) },
-            stationary: false,
-            pos: Position {
-                linear: n64(5.0) * VecN::basis(dim, 0),
-                angular: MatN::identity(dim),
+    for i in 0..10 {
+        world.objects.push(Object {
+            body: Body {
+                mass: n64(1.0),
+                inertia: Inertia::Scalar { s: n64(1.0) },
+                stationary: false,
+                pos: Position {
+                    linear: n64(4.0 * (i+1) as f64) * VecN::basis(dim, 0),
+                    angular: MatN::identity(dim),
+                },
+                mom: Momentum {
+                    linear: VecN {
+                        e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
+                    },
+                    angular: VecN {
+                        e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
+                    }.to_bivecn(),
+                },
+                collider: Collider::Sphere { radius: n64(1.0) },
+                material: Material {
+                    restitution: n64(0.4),
+                },
             },
-            mom: Momentum {
-                linear: VecN::zero(dim),
-                angular: BiVecN::zero(dim),
-            },
-            collider: Collider::Sphere { radius: n64(1.0) },
-            material: Material {
-                restitution: n64(0.4),
-            },
-        },
-    });
+        });
+    }
 
-    let sec = 1;
+    let sec = 5;
     let step = 100;
     let dt = n64(1.0) / n64(step as f64);
 

@@ -63,9 +63,9 @@ impl Body {
             self.pos.linear = &self.pos.linear + &self.mom.linear / self.mass * dt;
             
             let mut angvelocity = self.body_bivec_to_world(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular))) / self.mass;
-            let rot = &self.pos.angular + (angvelocity.to_matn() * &self.pos.angular) * (dt / 2.0);
+            let rot = (&self.pos.angular + (angvelocity.to_matn() * &self.pos.angular) * (dt / 2.0)).orthonormalize();
             angvelocity = &rot * (&self.inverse_moment_of_inertia(&rot.mult_transpose_bivecn(&self.mom.angular))) / self.mass;
-            self.pos.angular = &self.pos.angular + (angvelocity.to_matn() * &self.pos.angular) * dt;
+            self.pos.angular = (&self.pos.angular + (angvelocity.to_matn() * &self.pos.angular) * dt).orthonormalize();
         }
     }
 

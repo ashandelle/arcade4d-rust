@@ -333,6 +333,22 @@ impl VecN {
         vecs
     }
 
+    pub fn to_bivecn(&self) -> BiVecN {
+        let dim = ((2.0*(self.e.len() as f64) + 0.25).sqrt() + 0.5).round() as usize;
+        let mut b = BiVecN::zero(dim);
+
+        let mut k = 0;
+        for i in 0..dim {
+            for j in (i+1)..dim {
+                b.m.e[i].e[j] = self.e[k];
+                b.m.e[j].e[i] = -self.e[k];
+                k+=1;
+            }
+        }
+
+        b
+    }
+
     // Zero
     pub fn zero(dim: usize) -> Self {
         Self {

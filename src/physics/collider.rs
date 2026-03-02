@@ -1,6 +1,6 @@
 use noisy_float::prelude::*;
 
-use crate::{mathnd::{BiVecN, MatN, VecN}, physics::Body};
+use crate::{mathnd::VecN, physics::Body};
 
 #[derive(Clone)]
 pub enum Collider {
