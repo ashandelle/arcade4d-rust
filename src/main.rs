@@ -1,3 +1,5 @@
+use std::fs::File;
+use std::io::Write;
 use std::time::Instant;
 
 use crate::mathnd::{BiVecN, MatN, VecN};
@@ -15,7 +17,7 @@ fn main() {
 
     let dim = 5;
 
-    let sec = 1;
+    let sec = 10;
     let step = 100;
     let dt = n64(1.0) / n64(step as f64);
 
@@ -51,7 +53,7 @@ fn main() {
                 inertia: Inertia::Scalar { s: n64(1.0) },
                 stationary: false,
                 pos: Position {
-                    linear: n64(4.0 * (i+1) as f64) * VecN::basis(dim, 0),
+                    linear: n64(3.0 * (i+1) as f64) * VecN::basis(dim, 0),
                     angular: MatN::identity(dim),
                 },
                 mom: Momentum {
@@ -72,14 +74,23 @@ fn main() {
 
     let start = Instant::now();
 
+    let mut file = match File::create("output.txt") {
+        Ok(value) => value,
+        Err(error) => {
+            eprintln!("Problem opening the file: {:?}", error);
+            panic!("Cannot proceed without a file")
+        },
+    };
+
     let mut i = 0;
     while i < sec*step {
         world.update(dt);
 
         for j in 0..world.objects.len() {
             let obj = &world.objects[j];
-            println!("{}", obj.body.pos);
-            println!("{}", obj.body.mom);
+            // println!("{}", obj.body.pos);
+            // println!("{}", obj.body.mom);
+            writeln!(&mut file, "{}", obj.body.pos);
         }
 
         i+=1;
