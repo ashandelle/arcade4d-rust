@@ -1,7 +1,7 @@
 use noisy_float::prelude::*;
 
 use super::{MatN, VecN};
-use std::ops::{Neg, Add, Sub, Mul, Div};
+use std::{fmt, ops::{Add, Div, Mul, Neg, Sub}};
 
 #[derive(Debug, Clone)]
 pub struct BiVecN {
@@ -143,6 +143,23 @@ impl<'a> Div<N64> for &'a BiVecN {
         BiVecN {
             m: &self.m / s,
         }
+    }
+}
+
+impl fmt::Display for BiVecN {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        // write!(f, "{:?}", self.e)
+        let dim = self.m.e.len();
+        write!(f, "[");
+        for i in 0..dim {
+            for j in (i+1)..dim {
+                write!(f, "{}", self.m.e[i].e[j]);
+                if (i != dim-2) || (j != dim-1) {
+                    write!(f, ", ");
+                }
+            }
+        }
+        write!(f, "]")
     }
 }
 

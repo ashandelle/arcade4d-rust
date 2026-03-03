@@ -1,3 +1,5 @@
+use std::fmt;
+
 use noisy_float::prelude::*;
 
 use crate::{mathnd::{BiVecN, MatN, VecN}, physics::Collider};
@@ -13,10 +15,22 @@ pub struct Momentum {
     pub angular: BiVecN,
 }
 
+impl fmt::Display for Momentum {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{ linear: {}, angular: {}}}", self.linear, self.angular)
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Position {
     pub linear: VecN,
     pub angular: MatN,
+}
+
+impl fmt::Display for Position {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{ linear: {}, angular: {}}}", self.linear, self.angular)
+    }
 }
 
 #[derive(Debug, Clone)]

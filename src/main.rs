@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use crate::mathnd::{BiVecN, MatN, VecN};
 use crate::physics::{Body, Collider, Inertia, Material, Momentum, Object, Position, World};
 
@@ -11,20 +13,11 @@ mod physics;
 fn main() {
     let mut rng = rand::rng();
 
-    // let v1: VecN = VecN{e: vec![rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal)]};
-    // let v2: VecN = VecN{e: vec![rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal)]};
-    // let v3: VecN = VecN{e: vec![rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal)]};
-    // let v4: VecN = VecN{e: vec![rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal), rng.sample(StandardNormal)]};
+    let dim = 5;
 
-    // let m1: MatN = MatN::from_vecn(&v1, &v2);
-
-    // let b1: BiVecN = &v3 ^ &v4;
-    // let b2: BiVecN = (&m1 * &v3) ^ (&m1 * &v4);
-
-    // println!("{:?}", m1 * b1);
-    // println!("{:?}", b2);
-
-    let dim = 4;
+    let sec = 1;
+    let step = 100;
+    let dt = n64(1.0) / n64(step as f64);
 
     let mut world = World::new(dim);
     world.gravity = n64(-9.8) * VecN::basis(dim, 0);
@@ -51,7 +44,7 @@ fn main() {
         },
     });
 
-    for i in 0..10 {
+    for i in 0..100 {
         world.objects.push(Object {
             body: Body {
                 mass: n64(1.0),
@@ -77,9 +70,7 @@ fn main() {
         });
     }
 
-    let sec = 5;
-    let step = 100;
-    let dt = n64(1.0) / n64(step as f64);
+    let start = Instant::now();
 
     let mut i = 0;
     while i < sec*step {
@@ -87,9 +78,14 @@ fn main() {
 
         for j in 0..world.objects.len() {
             let obj = &world.objects[j];
-            println!("{:?}", obj.body.pos);
+            println!("{}", obj.body.pos);
+            println!("{}", obj.body.mom);
         }
 
         i+=1;
     }
+
+    let duration = start.elapsed();
+
+    println!("{:?}", duration);
 }

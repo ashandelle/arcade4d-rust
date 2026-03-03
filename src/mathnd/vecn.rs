@@ -1,7 +1,7 @@
 use noisy_float::prelude::*;
 
 use super::{BiVecN, MatN};
-use std::ops::{Neg, Add, Sub, Mul, Div, BitXor};
+use std::{fmt, ops::{Add, BitXor, Div, Mul, Neg, Sub}};
 
 #[derive(Debug, Clone)]
 pub struct VecN {
@@ -261,6 +261,12 @@ impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
         BiVecN {
             m: MatN{e: vecs},
         }.skew()
+    }
+}
+
+impl fmt::Display for VecN {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.e)
     }
 }
 

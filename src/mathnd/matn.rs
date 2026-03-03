@@ -1,7 +1,7 @@
 use noisy_float::prelude::*;
 
 use super::{BiVecN, VecN};
-use std::ops::{Neg, Add, Sub, Mul, Div};
+use std::{fmt, ops::{Add, Div, Mul, Neg, Sub}};
 
 #[derive(Debug, Clone)]
 pub struct MatN {
@@ -304,6 +304,19 @@ impl<'a,'b> Mul<&'b MatN> for &'a MatN {
     }
 }
 
+impl fmt::Display for MatN {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "[");
+        for i in 0..self.e.len() {
+            write!(f, "{}", self.e[i]);
+            if i != self.e.len()-1 {
+                write!(f, ", ");
+            }
+        }
+        write!(f, "]")
+    }
+}
+
 impl MatN {
     // Dot product
     pub fn dot(&self, m: &MatN) -> N64 {
@@ -337,7 +350,7 @@ impl MatN {
 
         let mut dot = n64(1.0);
 
-        while dot > N64::epsilon() {
+        while dot > n64(1e-12) {
             let mut tmp = mat.clone();
 
             dot = n64(0.0);
