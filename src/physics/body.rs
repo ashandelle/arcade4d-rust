@@ -2,7 +2,7 @@ use std::fmt;
 
 use noisy_float::prelude::*;
 
-use crate::{mathnd::{BiVecN, MatN, VecN}, physics::Collider};
+use crate::{mathnd::{BiVecN, MatN, VecN}, physics::{Collider, Render}};
 
 #[derive(Debug, Clone)]
 pub struct Material {
@@ -52,6 +52,7 @@ pub struct Body {
     pub mom: Momentum,
 
     pub collider: Collider,
+    pub render: Render,
 }
 
 impl Body {

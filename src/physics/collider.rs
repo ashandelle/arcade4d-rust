@@ -1,6 +1,6 @@
 use noisy_float::prelude::*;
 
-use crate::{mathnd::VecN, physics::Body};
+use crate::{mathnd::VecN, physics::{Body, Polytope}};
 
 #[derive(Clone)]
 pub enum Collider {
@@ -10,7 +10,7 @@ pub enum Collider {
     // Tegum { parts: Vec<Collider> },
     // Prism { parts: Vec<Collider> },
     // Minkowski { parts: Vec<Collider> },
-    // Polytope { maxradius: N64, poly: Polytope }, // Convex only
+    Polytope { maxradius: N64, poly: Polytope }, // Convex only
     // Mesh { mesh: Mesh },
 }
 
@@ -76,40 +76,6 @@ impl CollisionDetection {
         b: &Body,
     ) -> Option<CollisionManifold> {
         match (&a.collider, &b.collider) {
-            // (Collider::HalfSpace { normal }, Collider::Mesh { mesh }) => {
-            //     let plane_distance = a.pos.dot(*normal);
-            //     let mut max_depth = 0.0;
-
-            //     let contacts: Vec<_> = mesh
-            //         .vertices
-            //         .iter()
-            //         .filter_map(|position| {
-            //             let pos = b.body_pos_to_world(*position);
-
-            //             let distance = pos.dot(*normal);
-
-            //             let depth = plane_distance - distance;
-            //             if depth > 0.0 {
-            //                 if depth > max_depth {
-            //                     max_depth = depth;
-            //                 }
-            //                 Some(pos)
-            //             } else {
-            //                 None
-            //             }
-            //         })
-            //         .collect();
-
-            //     if contacts.len() > 0 {
-            //         Some(CollisionManifold {
-            //             normal: *normal,
-            //             depth: max_depth,
-            //             contacts,
-            //         })
-            //     } else {
-            //         None
-            //     }
-            // }
             (Collider::HalfSpace { normal }, Collider::Sphere { radius }) => {
                 let plane_distance = a.pos.linear.dot(normal);
                 let sphere_distance = b.pos.linear.dot(normal);
@@ -125,66 +91,6 @@ impl CollisionDetection {
                     None
                 }
             }
-            // (Collider::Mesh { .. }, Collider::HalfSpace { .. }) => {
-            //     // Just call this again with the arguments swapped
-            //     let mut manifold = self.detect_collisions((key.1, key.0), b, a);
-            //     if let Some(m) = &mut manifold {
-            //         m.normal = -m.normal;
-            //     }
-            //     manifold
-            // }
-            // (
-            //     Collider::Mesh { mesh: mesh_a },
-            //     Collider::Mesh { mesh: mesh_b },
-            // ) => {
-            //     let a = MeshRef {
-            //         body: a,
-            //         mesh: mesh_a,
-            //     };
-            //     let b = MeshRef {
-            //         body: b,
-            //         mesh: mesh_b,
-            //     };
-            //     if let Some(contact) = self.mesh_sat(key, a, b) {
-            //         // dbg!(&contact);
-            //         return Some(match contact {
-            //             ContactData::VertexCell(contact) => {
-            //                 resolve_vertex_cell_contact(a, b, contact)
-            //             }
-            //             ContactData::EdgeFace(contact) => {
-            //                 resolve_edge_face_contact(a, b, contact)
-            //             }
-            //         });
-            //     }
-            //     None
-            // }
-            // (
-            //     Collider::Mesh { mesh: mesh_a },
-            //     Collider::Sphere { radius: radius_b },
-            // ) => {
-            //     if (a.pos - b.pos).magnitude() > mesh_a.radius + radius_b {
-            //         return None;
-            //     }
-
-            //     let closest_point = a.body_pos_to_world(
-            //         mesh_a.closest_point_to(a.world_pos_to_body(b.pos)),
-            //     );
-            //     let displacement = closest_point - b.pos;
-            //     if displacement.magnitude() < EPSILON {
-            //         None
-            //     } else {
-            //         let depth = radius_b - displacement.magnitude();
-            //         if depth > 0.0 {
-            //             Some(CollisionManifold {
-            //                 depth,
-            //                 normal: -displacement.normalize(),
-            //                 contacts: vec![closest_point],
-            //             })
-            //         } else {
-            //             None
-            //         }
-            //     }
-            // }
             (Collider::Sphere { .. }, Collider::HalfSpace { .. }) => {
                 // Just call this again with the arguments swapped
                 let mut manifold = self.detect_collisions((key.1, key.0), b, a);
@@ -193,14 +99,6 @@ impl CollisionDetection {
                 }
                 manifold
             }
-            // (Collider::Sphere { .. }, Collider::Mesh { .. }) => {
-            //     // Just call this again with the arguments swapped
-            //     let mut manifold = self.detect_collisions((key.1, key.0), b, a);
-            //     if let Some(m) = &mut manifold {
-            //         m.normal = -m.normal;
-            //     }
-            //     manifold
-            // }
             (
                 Collider::Sphere { radius: radius_a },
                 Collider::Sphere { radius: radius_b },
@@ -217,6 +115,36 @@ impl CollisionDetection {
                 } else {
                     None
                 }
+            }
+            (Collider::HalfSpace { normal }, Collider::Polytope { maxradius, poly }) => {
+                let plane_distance = a.pos.linear.dot(normal);
+                let sphere_distance = b.pos.linear.dot(normal);
+
+                let center_distance = sphere_distance - plane_distance;
+                if center_distance > *maxradius {
+                    return None;
+                }
+
+                let p = b.body_pos_to_world(&poly.support(&-b.world_vec_to_body(normal)));
+                let dist = normal.dot(&p);
+
+                if dist < 0.0 {
+                    Some(CollisionManifold {
+                        normal: normal.clone(),
+                        depth: -dist,
+                        contacts: vec![p],
+                    })
+                } else {
+                    None
+                }
+            }
+            (Collider::Polytope { .. }, Collider::HalfSpace { .. }) => {
+                // Just call this again with the arguments swapped
+                let mut manifold = self.detect_collisions((key.1, key.0), b, a);
+                if let Some(m) = &mut manifold {
+                    m.normal = -&m.normal;
+                }
+                manifold
             }
             _ => None,
         }
