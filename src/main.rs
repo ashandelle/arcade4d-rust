@@ -25,7 +25,7 @@ fn main() {
 
     let mut colors: Vec<(f64,f64,f64)> = Vec::new();
 
-    for _i in 0..(1 << dim) {
+    for _i in 0..((1 << dim).max(2*dim)) {
         colors.push((rng.random(),rng.random(),rng.random()));
     }
 
@@ -54,7 +54,7 @@ fn main() {
         },
     });
 
-    for i in 0..100 {
+    for i in 0..1 {
         world.objects.push(Object {
             body: Body {
                 mass: n64(1.0),
@@ -68,7 +68,7 @@ fn main() {
                     linear: VecN {
                         e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
                     },
-                    angular: VecN {
+                    angular: BiVecN::basis(dim, 0, 1) + VecN {
                         e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
                     }.to_bivecn(),
                 },
@@ -112,6 +112,7 @@ fn main() {
     println!("{:?}", duration);
 }
 
+// ffmpeg -framerate 60 -i output_%03d.png -c:v libx264 -pix_fmt yuv420p output.mp4
 fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, objects: &Vec<Object>) {
     const IMAGE_WIDTH: u32 = 256;
     const IMAGE_HEIGHT: u32 = 256;
@@ -137,10 +138,19 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, objects: &Vec<Objec
                 center.e[0] = n64(0.0);
                 center.e[1] = n64(0.0);
                 center.e[dim-1] = n64(0.0);
-                if center.length() < *radius {
+                if center.length_sqr() < *radius*radius {
                     culled.push(object);
                 }
             },
+            // Collider::Polytope { maxradius, poly } => {
+            //     let mut center = &object.body.pos.linear - &pos;
+            //     center.e[0] = n64(0.0);
+            //     center.e[1] = n64(0.0);
+            //     center.e[dim-1] = n64(0.0);
+            //     if center.length_sqr() < *maxradius*maxradius {
+            //         culled.push(object);
+            //     }
+            // },
         }
     }
 
@@ -171,6 +181,9 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, objects: &Vec<Objec
                     Collider::Sphere { radius } => {
                         (&loc - &culled[j].body.pos.linear).length() - radius
                     },
+                    // Collider::Polytope { maxradius, poly } => {
+                        
+                    // },
                 };
                 if d < dist {
                     dist = d;
@@ -196,12 +209,15 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, objects: &Vec<Objec
                         let c = &loc - &culled[id].body.pos.linear;
                         let mut n = 0;
                         for j in 0..dim {
-                            if c.dot(&culled[j].body.pos.angular.e[j]) >= 0.0 {
+                            if c.dot(&culled[id].body.pos.angular.e[j]) >= 0.0 {
                                 n += 1<<j;
                             }
                         }
                         colors[n]
                     },
+                    // Collider::Polytope { maxradius, poly } => {
+                    //     (0.5, 0.5, 0.5)
+                    // },
                 };
 
                 r *= f;

@@ -10,7 +10,7 @@ pub enum Collider {
     // Tegum { parts: Vec<Collider> },
     // Prism { parts: Vec<Collider> },
     // Minkowski { parts: Vec<Collider> },
-    // Polytope { poly: Polytope }, // Convex only
+    // Polytope { maxradius: N64, poly: Polytope }, // Convex only
     // Mesh { mesh: Mesh },
 }
 
