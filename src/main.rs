@@ -65,62 +65,62 @@ fn main() {
         },
     });
 
-    for i in 0..10 {
-        world.objects.push(Object {
-            body: Body {
-                mass: n64(1.0),
-                inertia: Inertia::Scalar { s: n64(1.0) },
-                stationary: false,
-                pos: Position {
-                    linear: n64(3.0 * (i+1) as f64) * VecN::basis(dim, 0),
-                    angular: MatN::identity(dim),
-                },
-                mom: Momentum {
-                    linear: VecN {
-                        e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
-                    },
-                    angular: BiVecN::basis(dim, 0, 1) + VecN {
-                        e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
-                    }.to_bivecn(),
-                },
-                collider: Collider::Sphere { radius: n64(1.0) },
-                render: Render::Sphere { radius: n64(1.0) },
-                material: Material {
-                    restitution: n64(0.4),
-                },
-            },
-        });
-    }
+    // for i in 0..10 {
+    //     world.objects.push(Object {
+    //         body: Body {
+    //             mass: n64(1.0),
+    //             inertia: Inertia::Scalar { s: n64(1.0) },
+    //             stationary: false,
+    //             pos: Position {
+    //                 linear: n64(3.0 * (i+1) as f64) * VecN::basis(dim, 0),
+    //                 angular: MatN::identity(dim),
+    //             },
+    //             mom: Momentum {
+    //                 linear: VecN {
+    //                     e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
+    //                 },
+    //                 angular: BiVecN::basis(dim, 0, 1) + VecN {
+    //                     e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
+    //                 }.to_bivecn(),
+    //             },
+    //             collider: Collider::Sphere { radius: n64(1.0) },
+    //             render: Render::Sphere { radius: n64(1.0) },
+    //             material: Material {
+    //                 restitution: n64(0.4),
+    //             },
+    //         },
+    //     });
+    // }
 
-    // world.objects.push(Object {
-    //     body: Body {
-    //         mass: n64(1.0),
-    //         inertia: Inertia::Scalar { s: n64(1.0) },
-    //         stationary: false,
-    //         pos: Position {
-    //             linear: n64(4.0) * VecN::basis(dim, 0),
-    //             angular: MatN {
-    //                 e: (0..dim).map(|x| VecN {
-    //                     e: (0..dim).map(|x| n64(rng.sample(StandardNormal))).collect(),
-    //                 }).collect(),
-    //             }.orthonormalize(),
-    //         },
-    //         mom: Momentum {
-    //             // linear: VecN {
-    //             //     e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
-    //             // },
-    //             linear: VecN::zero(dim),
-    //             angular: BiVecN::basis(dim, 0, 1) + VecN {
-    //                 e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.1) * n64(rng.sample(StandardNormal))).collect()
-    //             }.to_bivecn(),
-    //         },
-    //         collider: Collider::Polytope { maxradius: n64(1.0), poly: Polytope::orthoplex(dim) },
-    //         render: Render::Orthoplex { radius: n64(1.0) },
-    //         material: Material {
-    //             restitution: n64(0.4),
-    //         },
-    //     },
-    // });
+    world.objects.push(Object {
+        body: Body {
+            mass: n64(1.0),
+            inertia: Inertia::Scalar { s: n64(1.0) },
+            stationary: false,
+            pos: Position {
+                linear: n64(4.0) * VecN::basis(dim, 0),
+                angular: MatN {
+                    e: (0..dim).map(|x| VecN {
+                        e: (0..dim).map(|x| n64(rng.sample(StandardNormal))).collect(),
+                    }).collect(),
+                }.orthonormalize(),
+            },
+            mom: Momentum {
+                // linear: VecN {
+                //     e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
+                // },
+                linear: VecN::zero(dim),
+                angular: BiVecN::basis(dim, 0, 1) + VecN {
+                    e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.3) * n64(rng.sample(StandardNormal))).collect()
+                }.to_bivecn(),
+            },
+            collider: Collider::Polytope { maxradius: n64(1.0), poly: Polytope::orthoplex(dim) },
+            render: Render::Orthoplex { radius: n64(1.0) },
+            material: Material {
+                restitution: n64(0.4),
+            },
+        },
+    });
 
     let start = Instant::now();
 

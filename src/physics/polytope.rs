@@ -16,7 +16,7 @@ impl Polytope {
     pub fn support(&self, dir: &VecN) -> VecN {
         let dim = dir.e.len();
 
-        let mut dist: N64 = -N64::infinity(); // Should probably be -inf
+        let mut dist: N64 = -N64::infinity();
         let mut furthest: VecN = VecN::zero(dim);
 
         for i in 0..self.zonotopes.len() {

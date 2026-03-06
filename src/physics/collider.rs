@@ -108,7 +108,8 @@ impl CollisionDetection {
                 if depth > 0.0 {
                     let normal = displacement.normalize();
                     Some(CollisionManifold {
-                        contacts: vec![&a.pos.linear + depth * &normal],
+                        // contacts: vec![&a.pos.linear + depth * &normal],
+                        contacts: vec![&a.pos.linear + (*radius_a - depth/2.0) * &normal],
                         normal,
                         depth,
                     })
@@ -117,11 +118,8 @@ impl CollisionDetection {
                 }
             }
             (Collider::HalfSpace { normal }, Collider::Polytope { maxradius, poly }) => {
-                let plane_distance = a.pos.linear.dot(normal);
                 let sphere_distance = b.pos.linear.dot(normal);
-
-                let center_distance = sphere_distance - plane_distance;
-                if center_distance > *maxradius {
+                if sphere_distance > *maxradius {
                     return None;
                 }
 
