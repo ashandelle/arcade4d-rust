@@ -42,7 +42,7 @@ fn main() {
 
     world.objects.push(Object {
         body: Body {
-            mass: n64(1.0),
+            mass: n64(0.0),
             inertia: Inertia::Immovable,
             stationary: true,
             pos: Position {

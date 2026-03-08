@@ -87,7 +87,7 @@ impl Body {
     pub fn inverse_moment_of_inertia(&self, body_bivec: &BiVecN) -> BiVecN {
         match &self.inertia {
             Inertia::Scalar { s } => {
-                body_bivec / *s
+                body_bivec / (*s * self.mass)
             },
             Inertia::BiVec { b } => {
                 BiVecN {
@@ -97,7 +97,7 @@ impl Body {
                             .map(|(x, y)| VecN {
                                 e: x.e.iter()
                                     .zip(y.e.iter())
-                                    .map(|(x, y)| *x / *y)
+                                    .map(|(x, y)| *x / (*y * self.mass))
                                     .collect(),
                             })
                             .collect(),
@@ -114,13 +114,17 @@ impl Body {
     }
 
     pub fn vel_at(&self, world_pos: &VecN) -> VecN {
-        let body_pos = self.world_pos_to_body(&world_pos);
+        if self.mass > 0.0 {
+            let body_pos = self.world_pos_to_body(&world_pos);
 
-        let rot_vel = self.body_vec_to_world(
-            &body_pos.left_contract(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)))
-        );
+            let rot_vel = self.body_vec_to_world(
+                &body_pos.left_contract(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)))
+            );
 
-        (&self.mom.linear + rot_vel) / self.mass
+            &self.mom.linear / self.mass + rot_vel
+        } else {
+            VecN::zero(world_pos.e.len())
+        }
     }
 
     pub fn body_vec_to_world(&self, v: &VecN) -> VecN {
