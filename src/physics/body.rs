@@ -90,19 +90,12 @@ impl Body {
                 body_bivec / (*s * self.mass)
             },
             Inertia::BiVec { b } => {
-                BiVecN {
-                    m: MatN { 
-                        e: (body_bivec.m.e).iter()
-                            .zip((b.m.e).iter())
-                            .map(|(x, y)| VecN {
-                                e: x.e.iter()
-                                    .zip(y.e.iter())
-                                    .map(|(x, y)| *x / (*y * self.mass))
-                                    .collect(),
-                            })
-                            .collect(),
-                    },
-                }
+                VecN {
+                    e: (body_bivec.to_vecn().e).iter()
+                        .zip(b.to_vecn().e.iter())
+                        .map(|(x,y)| *x / (*y * self.mass))
+                        .collect(),
+                }.to_bivecn()
             },
             // Inertia::Tensor { t } => {
                 

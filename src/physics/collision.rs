@@ -161,8 +161,8 @@ impl CollisionConstraint {
                 let impulse =
                     &self.tangents[i] * (new_impulses[i] - tangent_impulse[i]);
                 tangent_impulse[i] = new_impulses[i];
-                a.resolve_impulse(&-&impulse, contact);
-                b.resolve_impulse(&impulse, contact);
+                a.resolve_impulse(&-&impulse, &contact);
+                b.resolve_impulse(&impulse, &contact);
             }
 
             // calculate normal impulse
@@ -171,8 +171,8 @@ impl CollisionConstraint {
             let prev_impulse = *normal_impulse;
             *normal_impulse = (prev_impulse + lambda).max(n64(0.0));
             let impulse = &self.normal * (*normal_impulse - prev_impulse);
-            a.resolve_impulse(&-&impulse, contact);
-            b.resolve_impulse(&impulse, contact);
+            a.resolve_impulse(&-&impulse, &contact);
+            b.resolve_impulse(&impulse, &contact);
         }
     }
 }

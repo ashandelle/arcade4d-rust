@@ -111,7 +111,7 @@ fn main() {
                 // },
                 linear: VecN::zero(dim),
                 angular: BiVecN::basis(dim, 0, 1) + VecN {
-                    e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.3) * n64(rng.sample(StandardNormal))).collect()
+                    e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.05) * n64(rng.sample(StandardNormal))).collect()
                 }.to_bivecn(),
             },
             collider: Collider::Polytope { maxradius: n64(1.0), poly: Polytope::orthoplex(dim) },

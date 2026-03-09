@@ -278,6 +278,7 @@ impl VecN {
                 .map(|(&x, &y)| x * y)
                 .sum()
     }
+
     // Left contraction
     pub fn left_contract(&self, v: &BiVecN) -> VecN {
         -(&v.m * self)
