@@ -60,6 +60,26 @@ impl_signum!(
     f32, f64
 );
 
+// pub trait Round{
+//     fn round(self) -> Self;
+// }
+
+// macro_rules! impl_round {
+//     ( $($ty:ty),* ) => {
+//         $(
+//             impl Round for $ty {
+//                 fn round(self) -> Self {
+//                     self.round()
+//                 }
+//             }
+//         )*
+//     };
+// }
+
+// impl_round!(
+//     f32, f64
+// );
+
 pub trait MinMax{
     fn min(self, other: Self) -> Self;
     fn max(self, other: Self) -> Self;
@@ -335,6 +355,29 @@ macro_rules! impl_fromi32 {
 }
 
 impl_fromi32!(
+    isize, usize,
+    i8, i16, i32, i64,
+    u8, u16, u32, u64,
+    f32, f64
+);
+
+pub trait ToInt32{
+    fn toi32(self) -> i32;
+}
+
+macro_rules! impl_toi32 {
+    ( $($ty:ty),* ) => {
+        $(
+            impl ToInt32 for $ty {
+                fn toi32(self) -> i32 {
+                    self as i32
+                }
+            }
+        )*
+    };
+}
+
+impl_toi32!(
     isize, usize,
     i8, i16, i32, i64,
     u8, u16, u32, u64,

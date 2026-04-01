@@ -17,6 +17,7 @@ use rand_distr::StandardNormal;
 
 mod mathnd;
 mod physics;
+mod n64traits;
 
 type Num = f64;
 const DIM: usize = 3;
@@ -27,7 +28,7 @@ type Mat = MatN<Num, DIM>;
 fn main() {
     let mut rng = rand::rng();
 
-    let sec = 10;
+    let sec = 5;
     let step = 60;
     let dt: Num = Num::fromf64(1.0 / (step as f64));
 
@@ -39,7 +40,7 @@ fn main() {
 
     let mut light: Vector = Vector {
                         // e: (0..dim).map(|_x| n64(rng.sample(StandardNormal))).collect()
-                        e: std::array::from_fn(|i| rng.sample(StandardNormal)),
+                        e: std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))),
                     };
     light.e[0] = Num::fromf32(-4.0);
     light.e[1] *= (DIM/2) as f64;
@@ -110,7 +111,7 @@ fn main() {
                 linear: VecN::basis(0) * Num::fromf32(4.0),
                 angular: MatN {
                     e: std::array::from_fn(|i|
-                        Vector::new(std::array::from_fn(|i| rng.sample(StandardNormal)))
+                        Vector::new(std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))))
                     ),
                 }.orthonormalize(Num::fromf64(1e-8), 128),
             },
@@ -122,7 +123,7 @@ fn main() {
                 angular: BiVecN {
                     m: MatN {
                         e: std::array::from_fn(|i|
-                            Vector::new(std::array::from_fn(|i| rng.sample(StandardNormal)))
+                            Vector::new(std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))))
                         ),
                     },
                 }.skew() * Num::fromf64(0.05) + BiVecN::basis(0, 1),
@@ -261,7 +262,7 @@ fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<O
                 (r,g,b) = match &culled[id].body.collider {
                     Collider::HalfSpace { normal: _normal } => {
                         let s: i32 = loc.e.iter()
-                            .map(|x| x.round() as i32)
+                            .map(|x| Num::toi32(x.round()))
                             .sum();
                         if s % 2 == 0 {
                             (0.25,0.25,0.25)
