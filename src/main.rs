@@ -1,9 +1,13 @@
+#![feature(generic_const_exprs)]
+#![allow(incomplete_features)]
+
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
 
-use crate::mathnd::{BiVecN, MatN, VecN};
+// use crate::mathnd::{BiVecN, MatN, VecN};
+use crate::mathnd::*;
 use crate::physics::{Body, Collider, Inertia, Material, Momentum, Object, Polytope, Position, Render, World};
 
 use image::{ImageBuffer, Rgb, RgbImage};
@@ -14,53 +18,58 @@ use rand_distr::StandardNormal;
 mod mathnd;
 mod physics;
 
+type Num = f64;
+const DIM: usize = 3;
+type Vector = VecN<Num, DIM>;
+type BiVec = BiVecN<Num, DIM>;
+type Mat = MatN<Num, DIM>;
+
 fn main() {
     let mut rng = rand::rng();
 
-    let dim = 3;
-
-    let sec = 5;
+    let sec = 10;
     let step = 60;
-    let dt = n64(1.0) / n64(step as f64);
+    let dt: Num = Num::fromf64(1.0 / (step as f64));
 
     let mut colors: Vec<(f64,f64,f64)> = Vec::new();
 
-    for _i in 0..((1 << dim).max(2*dim)) {
+    for _i in 0..(std::cmp::min(std::cmp::max(1 << DIM, 2*DIM), 1 << 16)) {
         colors.push((rng.random(),rng.random(),rng.random()));
     }
 
-    let mut light = VecN {
-                        e: (0..dim).map(|_x| n64(rng.sample(StandardNormal))).collect()
+    let mut light: Vector = Vector {
+                        // e: (0..dim).map(|_x| n64(rng.sample(StandardNormal))).collect()
+                        e: std::array::from_fn(|i| rng.sample(StandardNormal)),
                     };
-    light.e[0] = n64(-4.0);
-    light.e[1] *= (dim/2) as f64;
-    light.e[dim-1] *= (dim/2) as f64;
+    light.e[0] = Num::fromf32(-4.0);
+    light.e[1] *= (DIM/2) as f64;
+    light.e[DIM-1] *= (DIM/2) as f64;
     light = light.normalize();
 
-    let mut world = World::new(dim);
-    world.gravity = n64(-9.8) * VecN::basis(dim, 0);
+    let mut world: World<Num, DIM> = World::new(Num::fromf64(1e-8));
+    world.gravity = Vector::basis(0) * Num::fromf64(-9.8);
 
     world.objects.push(Object {
         body: Body {
-            mass: n64(0.0),
+            mass: Num::zero(),
             inertia: Inertia::Immovable,
             stationary: true,
             pos: Position {
-                linear: VecN::zero(dim),
-                angular: MatN::identity(dim),
+                linear: Vector::zero(),
+                angular: MatN::identity(),
             },
             mom: Momentum {
-                linear: VecN::zero(dim),
-                angular: BiVecN::zero(dim),
+                linear: Vector::zero(),
+                angular: BiVecN::zero(),
             },
             collider: Collider::HalfSpace {
-                normal: VecN::basis(dim, 0),
+                normal: Vector::basis(0),
             },
             render: Render::HalfSpace {
-                normal: VecN::basis(dim, 0),
+                normal: Vector::basis(0),
             },
             material: Material {
-                restitution: n64(0.4),
+                restitution: Num::fromf32(0.4),
             },
         },
     });
@@ -94,30 +103,34 @@ fn main() {
 
     world.objects.push(Object {
         body: Body {
-            mass: n64(1.0),
-            inertia: Inertia::Scalar { s: n64(1.0) },
+            mass: Num::fromf32(1.0),
+            inertia: Inertia::Scalar { s: Num::fromf32(1.0) },
             stationary: false,
             pos: Position {
-                linear: n64(4.0) * VecN::basis(dim, 0),
+                linear: VecN::basis(0) * Num::fromf32(4.0),
                 angular: MatN {
-                    e: (0..dim).map(|x| VecN {
-                        e: (0..dim).map(|x| n64(rng.sample(StandardNormal))).collect(),
-                    }).collect(),
-                }.orthonormalize(),
+                    e: std::array::from_fn(|i|
+                        Vector::new(std::array::from_fn(|i| rng.sample(StandardNormal)))
+                    ),
+                }.orthonormalize(Num::fromf64(1e-8), 128),
             },
             mom: Momentum {
                 // linear: VecN {
                 //     e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
                 // },
-                linear: VecN::zero(dim),
-                angular: BiVecN::basis(dim, 0, 1) + VecN {
-                    e: (0..((dim*dim - dim) / 2)).map(|_x| n64(0.05) * n64(rng.sample(StandardNormal))).collect()
-                }.to_bivecn(),
+                linear: VecN::zero(),
+                angular: BiVecN {
+                    m: MatN {
+                        e: std::array::from_fn(|i|
+                            Vector::new(std::array::from_fn(|i| rng.sample(StandardNormal)))
+                        ),
+                    },
+                }.skew() * Num::fromf64(0.05) + BiVecN::basis(0, 1),
             },
-            collider: Collider::Polytope { maxradius: n64(1.0), poly: Polytope::orthoplex(dim) },
-            render: Render::Orthoplex { radius: n64(1.0) },
+            collider: Collider::Polytope { maxradius: Num::fromf32(1.0), poly: Polytope::orthoplex() },
+            render: Render::Orthoplex { radius: Num::fromf32(1.0) },
             material: Material {
-                restitution: n64(0.4),
+                restitution: Num::fromf32(0.4),
             },
         },
     });
@@ -143,7 +156,7 @@ fn main() {
         //     // writeln!(&mut file, "{}", obj.body.pos);
         // }
 
-        render(i, dim, &colors, &light, &world.objects);
+        render(i, &colors, &light, &world.objects);
         println!("{}", i);
 
         i+=1;
@@ -155,14 +168,14 @@ fn main() {
 }
 
 // ffmpeg -framerate 60 -i output_%03d.png -c:v libx264 -pix_fmt yuv420p output.mp4
-fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objects: &Vec<Object>) {
+fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<Object<Num, DIM>>) {
     const IMAGE_WIDTH: u32 = 256;
     const IMAGE_HEIGHT: u32 = 256;
 
     // Create a new ImageBuffer with the specified dimensions and pixel type (Rgb in this case)
     let mut buffer: RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    let pos = n64(2.0) * VecN::basis(dim, 0) + n64(-4.0) * VecN::basis(dim, dim-1);
+    let pos = VecN::basis(0) * Num::fromf32(2.0) + VecN::basis(DIM-1) * Num::fromf32(-4.0);
 
     let MAX_STEPS = 500;
     let MAX_DIST = 1e4;
@@ -176,19 +189,19 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
                 culled.push(object);
             },
             Collider::Sphere { radius } => {
-                let mut center = &object.body.pos.linear - &pos;
-                center.e[0] = n64(0.0);
-                center.e[1] = n64(0.0);
-                center.e[dim-1] = n64(0.0);
+                let mut center = object.body.pos.linear - pos;
+                center.e[0] = Num::zero();
+                center.e[1] = Num::zero();
+                center.e[DIM-1] = Num::zero();
                 if center.length_sqr() < *radius*radius {
                     culled.push(object);
                 }
             },
             Collider::Polytope { maxradius, poly: _poly } => {
-                let mut center = &object.body.pos.linear - &pos;
-                center.e[0] = n64(0.0);
-                center.e[1] = n64(0.0);
-                center.e[dim-1] = n64(0.0);
+                let mut center = object.body.pos.linear - pos;
+                center.e[0] = Num::zero();
+                center.e[1] = Num::zero();
+                center.e[DIM-1] = Num::zero();
                 if center.length_sqr() < *maxradius*maxradius {
                     culled.push(object);
                 }
@@ -198,21 +211,21 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
 
     // Iterate over the pixels and set their color values
     for (x, y, pixel) in buffer.enumerate_pixels_mut() {
-        let fx = n64(2.0) * (n64(x as f64) / (IMAGE_WIDTH - 1) as f64) - n64(1.0);
-        let fy = n64(-2.0) * (n64(y as f64) / (IMAGE_HEIGHT - 1) as f64) + n64(1.0);
+        let fx: Num = Num::fromf64(2.0 * (x as f64 / (IMAGE_WIDTH - 1) as f64) - 1.0);
+        let fy: Num = Num::fromf64(-2.0 * (y as f64 / (IMAGE_HEIGHT - 1) as f64) + 1.0);
 
         // Calculate RGB values based on coordinates
         let mut r = 0.0;
         let mut g = 0.0;
         let mut b = 0.0;
 
-        let vec = (fy * VecN::basis(dim, 0) + fx * VecN::basis(dim, 1) + VecN::basis(dim, dim-1)).normalize();
-        let mut t = n64(0.0);
+        let vec = (VecN::basis(0) * fy + VecN::basis(1) * fx + VecN::basis(DIM-1)).normalize();
+        let mut t: Num = Num::zero();
 
         for _i in 0..MAX_STEPS {
-            let loc = &pos + &vec * t;
+            let loc: Vector = pos + vec * t;
 
-            let mut dist = N64::infinity();
+            let mut dist: Num = MinMaxValue::maximum();
             let mut id = culled.len();
 
             for j in 0..culled.len() {
@@ -235,11 +248,11 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
             }
 
             if dist < EPS {
-                let mut v = Vec::new();
-                for i in (0..dim) {
+                let mut v = [Num::zero(); DIM];
+                for i in (0..DIM) {
                     let mut dloc = loc.clone();
                     dloc.e[i] = dloc.e[i] + EPS * 1e-2;
-                    v.push(culled[id].body.render.sdf(&culled[id].body, &dloc) - dist);
+                    v[i] = culled[id].body.render.sdf(&culled[id].body, &dloc) - dist;
                 }
                 let norm = VecN {
                     e: v,
@@ -248,7 +261,7 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
                 (r,g,b) = match &culled[id].body.collider {
                     Collider::HalfSpace { normal: _normal } => {
                         let s: i32 = loc.e.iter()
-                            .map(|x| x.raw().round() as i32)
+                            .map(|x| x.round() as i32)
                             .sum();
                         if s % 2 == 0 {
                             (0.25,0.25,0.25)
@@ -257,10 +270,10 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
                         }
                     },
                     Collider::Sphere { radius: _radius } => {
-                        let c = &loc - &culled[id].body.pos.linear;
+                        let c = loc - culled[id].body.pos.linear;
                         let mut n = 0;
-                        for j in 0..dim {
-                            if c.dot(&culled[id].body.pos.angular.e[j]) >= 0.0 {
+                        for j in 0..DIM {
+                            if c.dot(culled[id].body.pos.angular.e[j]) >= 0.0 {
                                 n += 1<<j;
                             }
                         }
@@ -271,8 +284,8 @@ fn render(n: usize, dim: usize, colors: &Vec<(f64,f64,f64)>, light: &VecN, objec
                     },
                 };
                 
-                let mut f = 10.0 / (t.raw() + 10.0);
-                f *= (norm.dot(light).raw() - 3.0) / -4.0;
+                let mut f = 10.0 / (t.tof64() + 10.0);
+                f *= (norm.dot(*light).tof64() - 3.0) / -4.0;
 
                 r *= f;
                 g *= f;

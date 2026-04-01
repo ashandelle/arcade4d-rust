@@ -1,31 +1,42 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub}};
 
-use noisy_float::prelude::*;
+use crate::{mathnd::{Abs, FromFloat32, FromInt32, FromUsize, MinMax, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero}, physics::{Body, CollisionConstraint, CollisionDetection}};
 
-use crate::{mathnd::VecN, physics::{Body, CollisionConstraint, CollisionDetection}};
-
-pub struct Object {
-    pub body: Body,
+pub struct Object<T, const N: usize> {
+    pub body: Body<T, N>,
     // pub renderer: Option<MeshBinding>,
 }
 
-pub struct World {
-    pub objects: Vec<Object>,
-    pub collision: CollisionDetection,
+pub struct World<T, const N: usize> {
+    pub objects: Vec<Object<T, N>>,
+    pub collision: CollisionDetection<T, N>,
 
-    pub gravity: VecN,
+    pub eps: T,
+
+    pub gravity: VecN<T, N>,
 }
 
-impl World {
-    pub fn new(dim: usize) -> Self {
+impl<T, const N: usize> World<T, N> where T: 
+Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
+Mul<Output = T> + Div<Output = T> +
+AddAssign + DivAssign + MulAssign +
+PartialOrd + MinMax +
+Sum +
+Sqrt + Abs + Signum +
+Zero + One + Two + MinMaxValue +
+FromUsize + FromFloat32 + FromInt32 +
+Copy,
+[(); N-1]: Sized {
+    pub fn new(eps: T) -> Self {
         Self {
             objects: Vec::new(),
             collision: CollisionDetection::new(),
-            gravity: VecN::zero(dim),
+            gravity: VecN::zero(),
+            eps: eps,
         }
     }
 
-    pub fn update(&mut self, dt: N64) {
+    pub fn update(&mut self, dt: T) {
         let mut collisions = Vec::new();
         let mut mass_adjustments = HashMap::new();
 
@@ -55,9 +66,9 @@ impl World {
                 CollisionConstraint::new(
                     manifold,
                     &self.objects[i].body,
-                    n64(mass_adjustments[&i] as f64),
+                    T::fromi32(mass_adjustments[&i]),
                     &self.objects[j].body,
-                    n64(mass_adjustments[&j] as f64),
+                    T::fromi32(mass_adjustments[&j]),
                 ),
             ));
         }
@@ -72,7 +83,7 @@ impl World {
         }
 
         for object in &mut self.objects {
-            object.body.step(&self.gravity, dt);
+            object.body.step(&self.gravity, self.eps, dt);
         }
     }
 

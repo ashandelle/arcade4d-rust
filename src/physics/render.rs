@@ -1,43 +1,63 @@
-use noisy_float::prelude::*;
+use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::{mathnd::VecN, physics::Body};
+use crate::{mathnd::{Abs, FromUsize, MinMax, MinMaxValue, Sqrt, Two, VecN, Zero}, physics::Body};
 
 #[derive(Clone)]
-pub enum Render {
-    HalfSpace { normal: VecN },
-    Sphere { radius: N64 },
-    Box { dimensions: VecN },
-    Orthoplex { radius: N64 },
+pub enum Render<T, const N: usize> {
+    HalfSpace { normal: VecN<T, N> },
+    Sphere { radius: T },
+    Box { dimensions: VecN<T, N> },
+    Orthoplex { radius: T },
 }
 
-impl Render {
-    pub fn sdf(&self, body: &Body, vec: &VecN) -> N64 {
+impl<T, const N: usize> Render<T, N> where T: 
+Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
+Mul<Output = T> + Div<Output = T> +
+AddAssign + DivAssign +
+PartialOrd + MinMax +
+Sum +
+Sqrt + Abs +
+Zero + Two + MinMaxValue +
+FromUsize +
+Copy {
+    pub fn sdf(&self, body: &Body<T, N>, vec: &VecN<T, N>) -> T {
         match self {
             Self::HalfSpace { normal } => {
-                (vec - &body.pos.linear).dot(normal)
+                (*vec - body.pos.linear).dot(*normal)
             },
             Self::Sphere { radius } => {
-                (vec - &body.pos.linear).length() - radius
+                (*vec - body.pos.linear).length() - *radius
             },
             Self::Box { dimensions } => {
                 let mut p = body.world_pos_to_body(vec);
-                p.e = (p.e).iter()
-                    .zip((dimensions.e).iter())
-                    .map(|(x,y)| x.abs() - y)
-                    .collect();
-                let m2 = match (p.e).iter().max() {
-                    Some(value) => *value,
-                    None => n64(0.0),
-                }.min(n64(0.0));
-                p.e = (p.e).iter().map(|x| *x.max(&n64(0.0))).collect();
-                p.length() + m2
+                // p.e = (p.e).iter()
+                //     .zip((dimensions.e).iter())
+                //     .map(|(x,y)| x.abs() - y)
+                //     .collect();
+                for (i, elem) in p.e.iter_mut().enumerate() {
+                    *elem = elem.abs() - dimensions.e[i];
+                }
+                // let m2 = match (p.e).iter().max() {
+                //     Some(value) => *value,
+                //     None => T::zero(),
+                // }.min(T::zero());
+                let mut m = T::minimum();
+                for (i, elem) in p.e.iter().enumerate() {
+                    m = m.max(*elem);
+                }
+                m = m.min(T::zero());
+                // p.e = (p.e).iter().map(|x| x.max(T::zero())).collect();
+                for (i, elem) in p.e.iter_mut().enumerate() {
+                    *elem = elem.max(T::zero());
+                }
+                p.length() + m
             },
             Self::Orthoplex { radius } => {
                 let p = body.world_pos_to_body(vec);
                 let sum = (p.e).iter()
                     .map(|x| x.abs())
-                    .sum::<N64>();
-                (sum - radius) / n64(vec.e.len() as f64).sqrt()
+                    .sum::<T>();
+                (sum - *radius) / T::fromusize(N).sqrt()
             },
         }
     }

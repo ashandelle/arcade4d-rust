@@ -1,228 +1,148 @@
-use noisy_float::prelude::*;
+use std::{iter::Sum, ops::{Add, Div, Mul, Neg, Sub}};
 
-use super::{MatN, VecN};
-use std::{fmt, ops::{Add, Div, Mul, Neg, Sub}};
+use crate::mathnd::{MatN, One, Sqrt, Two, Zero};
 
-#[derive(Debug, Clone)]
-pub struct BiVecN {
-    pub m: MatN,
+// type VecB<T, const N: usize> = VecN<T, {(N * N - N) / 2}>;
+
+#[derive(Debug, Clone, Copy)]
+pub struct BiVecN<T, const N: usize> {
+    pub m: MatN<T, N>,
+}
+
+impl<T, const N: usize> PartialEq for BiVecN<T, N> where T: PartialEq {
+    fn eq(&self, other: &Self) -> bool {
+        self.m == other.m
+    }
 }
 
 // Unary minus
-impl Neg for BiVecN {
-    type Output = BiVecN;
-    fn neg(self) -> BiVecN {
+impl<T, const N: usize> Neg for BiVecN<T, N> where T: Neg<Output = T> + Copy {
+    type Output = BiVecN<T, N>;
+    fn neg(self) -> BiVecN<T, N> {
         BiVecN {
             m: -self.m,
         }
     }
 }
-impl<'a> Neg for &'a BiVecN {
-    type Output = BiVecN;
-    fn neg(self) -> BiVecN {
-        BiVecN {
-            m: -&self.m,
-        }
-    }
-}
 
 // Vector addition
-impl Add for BiVecN {
-    type Output = BiVecN;
-    fn add(self, v: BiVecN) -> BiVecN {
+impl<T, const N: usize> Add for BiVecN<T, N> where T: Add<Output = T> + Copy {
+    type Output = BiVecN<T, N>;
+    fn add(self, v: BiVecN<T, N>) -> BiVecN<T, N> {
         BiVecN {
             m: self.m + v.m,
         }
     }
 }
-impl<'a> Add<BiVecN> for &'a BiVecN {
-    type Output = BiVecN;
-    fn add(self, v: BiVecN) -> BiVecN {
-        BiVecN {
-            m: &self.m + v.m,
-        }
-    }
-}
-impl<'b> Add<&'b BiVecN> for BiVecN {
-    type Output = BiVecN;
-    fn add(self, v: &BiVecN) -> BiVecN {
-        BiVecN {
-            m: self.m + &v.m,
-        }
-    }
-}
-impl<'a,'b> Add<&'b BiVecN> for &'a BiVecN {
-    type Output = BiVecN;
-    fn add(self, v: &BiVecN) -> BiVecN {
-        BiVecN {
-            m: &self.m + &v.m,
-        }
-    }
-}
 
 // Vector subtraction
-impl Sub for BiVecN {
-    type Output = BiVecN;
-    fn sub(self, v: BiVecN) -> BiVecN {
+impl<T, const N: usize> Sub for BiVecN<T, N> where T: Sub<Output = T> + Copy {
+    type Output = BiVecN<T, N>;
+    fn sub(self, v: BiVecN<T, N>) -> BiVecN<T, N> {
         BiVecN {
             m: self.m - v.m,
         }
     }
 }
-impl<'a> Sub<BiVecN> for &'a BiVecN {
-    type Output = BiVecN;
-    fn sub(self, v: BiVecN) -> BiVecN {
-        BiVecN {
-            m: &self.m - v.m,
-        }
-    }
-}
-impl<'b> Sub<&'b BiVecN> for BiVecN {
-    type Output = BiVecN;
-    fn sub(self, v: &BiVecN) -> BiVecN {
-        BiVecN {
-            m: self.m - &v.m,
-        }
-    }
-}
-impl<'a,'b> Sub<&'b BiVecN> for &'a BiVecN {
-    type Output = BiVecN;
-    fn sub(self, v: &BiVecN) -> BiVecN {
-        BiVecN {
-            m: &self.m - &v.m,
-        }
-    }
-}
 
 // Scalar multiplication
-impl Mul<BiVecN> for N64 {
-    type Output = BiVecN;
-    fn mul(self, v: BiVecN) -> BiVecN {
-        BiVecN {
-            m: self * v.m,
-        }
-    }
-}
-impl<'b> Mul<&'b BiVecN> for N64 {
-    type Output = BiVecN;
-    fn mul(self, v: &BiVecN) -> BiVecN {
-        BiVecN {
-            m: self * &v.m,
-        }
-    }
-}
-impl Mul<N64> for BiVecN {
-    type Output = BiVecN;
-    fn mul(self, s: N64) -> BiVecN {
+impl<T, const N: usize> Mul<T> for BiVecN<T, N> where T: Mul<Output = T> + Copy {
+    type Output = BiVecN<T, N>;
+    fn mul(self, s: T) -> BiVecN<T, N> {
         BiVecN {
             m: self.m * s,
         }
     }
 }
-impl<'a> Mul<N64> for &'a BiVecN {
-    type Output = BiVecN;
-    fn mul(self, s: N64) -> BiVecN {
-        BiVecN {
-            m: &self.m * s,
-        }
-    }
-}
 
 // Scalar division
-impl Div<N64> for BiVecN {
-    type Output = BiVecN;
-    fn div(self, s: N64) -> BiVecN {
+impl<T, const N: usize> Div<T> for BiVecN<T, N> where T: Div<Output = T> + Copy {
+    type Output = BiVecN<T, N>;
+    fn div(self, s: T) -> BiVecN<T, N> {
         BiVecN {
             m: self.m / s,
         }
     }
 }
-impl<'a> Div<N64> for &'a BiVecN {
-    type Output = BiVecN;
-    fn div(self, s: N64) -> BiVecN {
-        BiVecN {
-            m: &self.m / s,
-        }
-    }
-}
 
-impl fmt::Display for BiVecN {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        // write!(f, "{:?}", self.e)
-        let dim = self.m.e.len();
-        write!(f, "[");
-        for i in 0..dim {
-            for j in (i+1)..dim {
-                write!(f, "{}", self.m.e[i].e[j]);
-                if (i != dim-2) || (j != dim-1) {
-                    write!(f, ", ");
-                }
-            }
-        }
-        write!(f, "]")
-    }
-}
+// impl fmt::Display for BiVecN {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         // write!(f, "{:?}", self.e)
+//         let dim = self.m.e.len();
+//         write!(f, "[");
+//         for i in 0..dim {
+//             for j in (i+1)..dim {
+//                 write!(f, "{}", self.m.e[i].e[j]);
+//                 if (i != dim-2) || (j != dim-1) {
+//                     write!(f, ", ");
+//                 }
+//             }
+//         }
+//         write!(f, "]")
+//     }
+// }
 
-impl BiVecN {
+impl<T, const N: usize> BiVecN<T, N> {
     // Dot product
-    pub fn dot(&self, v: &BiVecN) -> N64 {
-        self.m.dot(&v.m) / 2.0
+    pub fn dot(self, b: BiVecN<T, N>) -> T where T: Mul<Output = T> + Div<Output = T> + Sum + Two + Copy {
+        self.m.dot(&b.m) / T::two()
     }
 
     // Length
-    pub fn length(&self) -> N64 {
-        (self.m.length_sqr() / 2.0).sqrt()
+    pub fn length(&self) -> T where T: Mul<Output = T> + Div<Output = T> + Sqrt + Sum + Two + Copy {
+        (self.m.length_sqr() / T::two()).sqrt()
     }
 
     // Length squared
-    pub fn length_sqr(&self) -> N64 {
-        self.m.length_sqr() / 2.0
+    pub fn length_sqr(&self) -> T where T: Mul<Output = T> + Div<Output = T> + Sum + Two + Copy {
+        self.m.length_sqr() / T::two()
     }
 
     // Skew
-    pub fn skew(&self) -> BiVecN {
+    pub fn skew(&self) -> BiVecN<T, N> where T: Sub<Output = T> + Div<Output = T> + Two + Copy {
         BiVecN {
-            m: (&self.m - &self.m.transpose()) / n64(2.0),
+            m: (self.m - self.m.transpose()) / T::two(),
         }
     }
 
-    pub fn get_ij(&self, i: usize, j: usize) -> N64 {
+    pub fn get_ij(&self, i: usize, j: usize) -> T where T: Copy {
         self.m.e[i].e[j]
     }
 
     // To MatN
-    pub fn to_matn(self) -> MatN {
+    pub fn to_matn(self) -> MatN<T, N> {
         self.m
     }
 
-    pub fn to_vecn(&self) -> VecN {
-        let mut v: Vec<N64> = Vec::new();
-        let n = self.m.e.len();
+    // pub fn to_vecn(&self) -> VecN<T, {(N * N - N) / 2}> where T: Zero + Copy {
+    //     let mut v: [T; (N * N - N) / 2] = [T::zero(); (N * N - N) / 2];
 
-        for i in 0..n {
-            for j in (i+1)..n {
-                v.push(self.get_ij(i, j));
-            }
-        }
+    //     let mut k = 0;
+    //     for i in 0..N {
+    //         for j in (i+1)..N {
+    //             v[k] = self.get_ij(i, j);
+    //             k+=1;
+    //         }
+    //     }
 
-        VecN {
-            e: v,
-        }
-    }
+    //     VecN {
+    //         e: v,
+    //     }
+    // }
 
     // Zero
-    pub fn zero(dim: usize) -> Self {
+    pub fn zero() -> Self where T: Zero + Copy {
         Self {
-            m: MatN::zero(dim),
+            m: MatN::zero(),
         }
     }
 
     // Basis element
-    pub fn basis(dim: usize, i: usize, j: usize) -> Self {
-        let mut mat = MatN::zero(dim);
+    pub fn basis(i: usize, j: usize) -> Self where T: Zero + One + Copy {
+        let mut mat = MatN::zero();
         if i != j {
-            mat.e[i].e[j] = n64(1.0);
-            mat.e[j].e[i] = n64(-1.0);
+            mat.e[i].e[j] = T::one();
+            mat.e[j].e[i] = T::one();
         }
         Self {
             m: mat,

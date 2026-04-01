@@ -1,278 +1,98 @@
-use noisy_float::prelude::*;
+use std::{iter::Sum, ops::{Add, AddAssign, BitXor, Div, Mul, Neg, Sub}};
 
-use super::{BiVecN, MatN};
-use std::{fmt, ops::{Add, BitXor, Div, Mul, Neg, Sub}};
+use crate::mathnd::{Abs, BiVecN, MatN, One, Sqrt, Two, Zero};
 
-#[derive(Debug, Clone)]
-pub struct VecN {
-    pub e: Vec<N64>,
+#[derive(Debug, Clone, Copy)]
+pub struct VecN<T, const N: usize> {
+    pub(crate) e: [T; N]
 }
 
-// Unary minus
-impl Neg for VecN {
-    type Output = VecN;
-    fn neg(self) -> VecN {
-        VecN {
-            e: (self.e).iter().map(|x| -x).collect(),
-        }
-    }
-}
-impl<'a> Neg for &'a VecN {
-    type Output = VecN;
-    fn neg(self) -> VecN {
-        VecN {
-            e: (self.e).iter().map(|x| -x).collect(),
-        }
+impl<T, const N: usize> PartialEq for VecN<T, N> where T: PartialEq {
+    fn eq(&self, other: &Self) -> bool {
+        self.e == other.e
     }
 }
 
-// Vector addition
-impl Add for VecN {
-    type Output = VecN;
-    fn add(self, v: VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x + *y)
-                       .collect(),
-        }
-    }
-}
-impl<'a> Add<VecN> for &'a VecN {
-    type Output = VecN;
-    fn add(self, v: VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x + *y)
-                       .collect(),
-        }
-    }
-}
-impl<'b> Add<&'b VecN> for VecN {
-    type Output = VecN;
-    fn add(self, v: &VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x + *y)
-                       .collect(),
-        }
-    }
-}
-impl<'a,'b> Add<&'b VecN> for &'a VecN {
-    type Output = VecN;
-    fn add(self, v: &VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x + *y)
-                       .collect(),
-        }
+impl<T, const N: usize> Neg for VecN<T, N> where T: Neg<Output = T> + Copy {
+    type Output = VecN<T, N>;
+    fn neg(self) -> VecN<T, N> {
+        VecN::new(std::array::from_fn(|i| -self.e[i]))
     }
 }
 
-// Vector subtraction
-impl Sub for VecN {
-    type Output = VecN;
-    fn sub(self, v: VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x - *y)
-                       .collect(),
-        }
-    }
-}
-impl<'a> Sub<VecN> for &'a VecN {
-    type Output = VecN;
-    fn sub(self, v: VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x - *y)
-                       .collect(),
-        }
-    }
-}
-impl<'b> Sub<&'b VecN> for VecN {
-    type Output = VecN;
-    fn sub(self, v: &VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x - *y)
-                       .collect(),
-        }
-    }
-}
-impl<'a,'b> Sub<&'b VecN> for &'a VecN {
-    type Output = VecN;
-    fn sub(self, v: &VecN) -> VecN {
-        VecN {
-            e: (self.e).iter()
-                       .zip((v.e).iter())
-                       .map(|(x, y)| *x - *y)
-                       .collect(),
-        }
+impl<T, const N: usize> Add for VecN<T, N> where T: Add<Output = T> + Copy {
+    type Output = VecN<T, N>;
+    fn add(self, v: VecN<T, N>) -> VecN<T, N> {
+        VecN::new(std::array::from_fn(|i| self.e[i] + v.e[i]))
     }
 }
 
-// Scalar multiplication
-impl Mul<VecN> for N64 {
-    type Output = VecN;
-    fn mul(self, v: VecN) -> VecN {
-        VecN {
-            e: v.e.iter()
-                .map(|x| self * x)
-                .collect(),
-        }
-    }
-}
-impl<'b> Mul<&'b VecN> for N64 {
-    type Output = VecN;
-    fn mul(self, v: &VecN) -> VecN {
-        VecN {
-            e: v.e.iter()
-                .map(|x| self * x)
-                .collect(),
-        }
-    }
-}
-impl Mul<N64> for VecN {
-    type Output = VecN;
-    fn mul(self, s: N64) -> VecN {
-        VecN {
-            e: self.e.iter()
-                .map(|x| *x * s)
-                .collect(),
-        }
-    }
-}
-impl<'a> Mul<N64> for &'a VecN {
-    type Output = VecN;
-    fn mul(self, s: N64) -> VecN {
-        VecN {
-            e: self.e.iter()
-                .map(|x| *x * s)
-                .collect(),
-        }
+impl<T, const N: usize> Sub for VecN<T, N> where T: Sub<Output = T> + Copy {
+    type Output = VecN<T, N>;
+    fn sub(self, v: VecN<T, N>) -> VecN<T, N> {
+        VecN::new(std::array::from_fn(|i| self.e[i] - v.e[i]))
     }
 }
 
-// Scalar division
-impl Div<N64> for VecN {
-    type Output = VecN;
-    fn div(self, s: N64) -> VecN {
-        VecN {
-            e: self.e.iter()
-                .map(|x| *x / s)
-                .collect(),
-        }
-    }
-}
-impl<'a> Div<N64> for &'a VecN {
-    type Output = VecN;
-    fn div(self, s: N64) -> VecN {
-        VecN {
-            e: self.e.iter()
-                .map(|x| *x / s)
-                .collect(),
-        }
+// impl<T, const N: usize> Mul<VecN<T, N>> for T where T: Mul<Output = T> + Copy {
+//     type Output = VecN<T, N>;
+//     fn mul(self, v: VecN<T, N>) -> VecN<T, N> {
+//         VecN::new(std::array::from_fn(|i| self * v.e[i]))
+//     }
+// }
+impl<T, const N: usize> Mul<T> for VecN<T, N> where T: Mul<Output = T> + Copy {
+    type Output = VecN<T, N>;
+    fn mul(self, s: T) -> VecN<T, N> {
+        VecN::new(std::array::from_fn(|i| self.e[i] * s))
     }
 }
 
-// Wedge product
-impl BitXor for VecN {
-    type Output = BiVecN;
-    fn bitxor(self, v: VecN) -> BiVecN {
-        let mut vecs: Vec<VecN> = Vec::new();
+impl<T, const N: usize> Div<T> for VecN<T, N> where T: Div<Output = T> + Copy {
+    type Output = VecN<T, N>;
+    fn div(self, s: T) -> VecN<T, N> {
+        VecN::new(std::array::from_fn(|i| self.e[i] / s))
+    }
+}
 
-        for i in 0..v.e.len() {
-            let mut vec: Vec<N64> = Vec::new();
-            for j in 0..v.e.len() {
-                vec.push(
-                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
-                );
-            }
-            vecs.push(VecN{e: vec});
-        }
+impl<T, const N: usize> BitXor for VecN<T, N> where T: Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Two + Copy {
+    type Output = BiVecN<T, N>;
+    fn bitxor(self, v: VecN<T, N>) -> BiVecN<T, N> {
+        // let mut vecs: Vec<VecN> = Vec::new();
 
+        // for i in 0..v.e.len() {
+        //     let mut vec: Vec<f64> = Vec::new();
+        //     for j in 0..v.e.len() {
+        //         vec.push(
+        //             self.e[i] * v.e[j] - self.e[j] * v.e[i]
+        //         );
+        //     }
+        //     vecs.push(VecN{e: vec});
+        // }
+
+        // BiVecN {
+        //     m: MatN{e: vecs},
+        // }.skew()
         BiVecN {
-            m: MatN{e: vecs},
-        }.skew()
-    }
-}
-impl<'a> BitXor<VecN> for &'a VecN {
-    type Output = BiVecN;
-    fn bitxor(self, v: VecN) -> BiVecN {
-        let mut vecs: Vec<VecN> = Vec::new();
-
-        for i in 0..v.e.len() {
-            let mut vec: Vec<N64> = Vec::new();
-            for j in 0..v.e.len() {
-                vec.push(
-                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
-                );
-            }
-            vecs.push(VecN{e: vec});
-        }
-
-        BiVecN {
-            m: MatN{e: vecs},
-        }.skew()
-    }
-}
-impl<'b> BitXor<&'b VecN> for VecN {
-    type Output = BiVecN;
-    fn bitxor(self, v: &VecN) -> BiVecN {
-        let mut vecs: Vec<VecN> = Vec::new();
-
-        for i in 0..v.e.len() {
-            let mut vec: Vec<N64> = Vec::new();
-            for j in 0..v.e.len() {
-                vec.push(
-                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
-                );
-            }
-            vecs.push(VecN{e: vec});
-        }
-
-        BiVecN {
-            m: MatN{e: vecs},
-        }.skew()
-    }
-}
-impl<'a,'b> BitXor<&'b VecN> for &'a VecN {
-    type Output = BiVecN;
-    fn bitxor(self, v: &VecN) -> BiVecN {
-        let mut vecs: Vec<VecN> = Vec::new();
-
-        for i in 0..v.e.len() {
-            let mut vec: Vec<N64> = Vec::new();
-            for j in 0..v.e.len() {
-                vec.push(
-                    self.e[i] * v.e[j] - self.e[j] * v.e[i]
-                );
-            }
-            vecs.push(VecN{e: vec});
-        }
-
-        BiVecN {
-            m: MatN{e: vecs},
+            m: MatN::mult_transpose_vecn(self, v) - MatN::mult_transpose_vecn(v, self),
         }.skew()
     }
 }
 
-impl fmt::Display for VecN {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.e)
-    }
-}
+// impl fmt::Display for VecN {
+//     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//         write!(f, "{:?}", self.e)
+//     }
+// }
 
-impl VecN {
+impl<T, const N: usize> VecN<T, N> {
+    pub fn new(e: [T; N]) -> Self {
+        VecN {
+            e: e,
+        }
+    }
+
     // Dot product
-    pub fn dot(&self, v: &VecN) -> N64 {
+    pub fn dot(&self, v: VecN<T, N>) -> T where T: Mul<Output = T> + Sum + Copy {
         (self.e).iter()
                 .zip((v.e).iter())
                 .map(|(&x, &y)| x * y)
@@ -280,93 +100,96 @@ impl VecN {
     }
 
     // Left contraction
-    pub fn left_contract(&self, v: &BiVecN) -> VecN {
-        -(&v.m * self)
+    pub fn left_contract(&self, v: BiVecN<T, N>) -> VecN<T, N> where T: Neg<Output = T> + Mul<Output = T> + Sum + Copy {
+        -(v.m * *self)
     }
 
     // Normalize
-    pub fn normalize(&self) -> VecN {
-        let mag: N64 = (self.e).iter()
-                                .map(|x| *x*x)
-                                .sum::<N64>().sqrt();
-        VecN {
-            e: self.e.iter()
-                    .map(|x| *x / mag)
-                    .collect(),
-        }
+    pub fn normalize(&self) -> VecN<T, N> where T: Mul<Output = T> + Div<Output = T> + Sqrt + Sum + Copy {
+        let mag: T = (self.e).iter()
+                                .map(|&x| x*x)
+                                .sum::<T>().sqrt();
+        VecN::new(std::array::from_fn(|i| self.e[i] / mag))
     }
 
     // Length
-    pub fn length(&self) -> N64 {
+    pub fn length(&self) -> T where T: Mul<Output = T> + Sqrt + Sum + Copy {
         (self.e).iter()
-                .map(|x| *x*x)
-                .sum::<N64>().sqrt()
+                .map(|&x| x*x)
+                .sum::<T>().sqrt()
     }
 
     // Length squared
-    pub fn length_sqr(&self) -> N64 {
+    pub fn length_sqr(&self) -> T where T: Mul<Output = T> + Sum + Copy {
         (self.e).iter()
-                .map(|x| *x*x)
-                .sum::<N64>()
+                .map(|&x| x*x)
+                .sum::<T>()
     }
 
-    pub fn orthonormal_basis(&self) -> Vec<VecN> {
-        let dim = self.e.len();
-
-        let normal = self.normalize();
-
-        let mut vecs: Vec<VecN> = Vec::new();
-        let mut maxdot: N64 = n64(0.0);
+    pub fn orthonormal_basis(&self) -> [VecN<T, N>; N-1] where T: Neg<Output = T> + Sub<Output = T> + Mul<Output = T> + Div<Output = T> + AddAssign + PartialOrd + Sum + Sqrt + Abs + Zero + One + Copy {
+        let normal: VecN<T, N> = self.normalize();
+    
+        let mut vecs: [VecN<T, N>; N-1] = [VecN::zero(); N-1];
+        let mut maxdot: T = T::zero();
         let mut maxi: usize = 0;
-
-        for i in 0..dim {
-            let v = VecN::basis(dim, i);
-            let d = v.dot(&normal);
-            vecs.push(v - &normal * d);
-            if d.abs() > maxdot {
-                maxdot = d.abs();
+    
+        for i in 0..N {
+            let d = normal.e[i].abs();
+            if d > maxdot {
+                maxdot = d;
                 maxi = i;
             }
         }
-        vecs.remove(maxi);
-
-        for j in 0..(dim-1) {
-            let vec = vecs[j].normalize();
-            for k in j+1..(dim-1) {
-                vecs[k] = &vecs[k] - (vec.dot(&vecs[k]) * &vec);
+        
+        let mut l = 0;
+        for i in 0..N {
+            if i != maxi {
+                let mut v: VecN<T, N> = normal * -normal.e[i];
+                v.e[i] += T::one();
+                vecs[l] = v;
+                l+=1;
             }
         }
-
+    
+        for j in 0..(N-1) {
+            let vec = vecs[j].normalize();
+            for k in j+1..(N-1) {
+                vecs[k] = vecs[k] - (vec * vec.dot(vecs[k]));
+            }
+        }
+    
         vecs
     }
 
-    pub fn to_bivecn(&self) -> BiVecN {
-        let dim = ((2.0*(self.e.len() as f64) + 0.25).sqrt() + 0.5).round() as usize;
-        let mut b = BiVecN::zero(dim);
-
-        let mut k = 0;
-        for i in 0..dim {
-            for j in (i+1)..dim {
-                b.m.e[i].e[j] = self.e[k];
-                b.m.e[j].e[i] = -self.e[k];
-                k+=1;
-            }
-        }
-
-        b
-    }
+    // pub fn to_bivecn(&self) -> BiVecN {
+    //     let dim = ((2.0*(self.e.len() as f64) + 0.25).sqrt() + 0.5).round() as usize;
+    //     let mut b = BiVecN::zero(dim);
+    //
+    //     let mut k = 0;
+    //     for i in 0..dim {
+    //         for j in (i+1)..dim {
+    //             b.m.e[i].e[j] = self.e[k];
+    //             b.m.e[j].e[i] = -self.e[k];
+    //             k+=1;
+    //         }
+    //     }
+    //
+    //     b
+    // }
 
     // Zero
-    pub fn zero(dim: usize) -> Self {
-        Self {
-            e: vec![n64(0.0); dim],
-        }
+    pub fn zero() -> Self where T: Zero + Copy {
+        Self::new([T::zero(); N])
+    }
+
+    pub fn default() -> Self where T: Default + Copy {
+        Self::new([T::default(); N])
     }
 
     // Basis element
-    pub fn basis(dim: usize, element: usize) -> Self {
-        let mut vec = Self::zero(dim);
-        vec.e[element] = n64(1.0);
+    pub fn basis(element: usize) -> Self where T: Zero + One + Copy {
+        let mut vec = Self::zero();
+        vec.e[element] = T::one();
         vec
     }
 }

@@ -1,24 +1,24 @@
-use noisy_float::prelude::*;
+use std::{iter::Sum, marker::PhantomData, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::{mathnd::VecN, physics::{Body, Polytope}};
+use crate::{mathnd::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero}, physics::{Body, Polytope}};
 
 #[derive(Clone)]
-pub enum Collider {
-    HalfSpace { normal: VecN },
-    Sphere { radius: N64 },
+pub enum Collider<T, const N: usize> {
+    HalfSpace { normal: VecN<T, N> },
+    Sphere { radius: T },
     // Rotatope { rota: Rotatope },
     // Tegum { parts: Vec<Collider> },
     // Prism { parts: Vec<Collider> },
     // Minkowski { parts: Vec<Collider> },
-    Polytope { maxradius: N64, poly: Polytope }, // Convex only
+    Polytope { maxradius: T, poly: Polytope<T, N> }, // Convex only
     // Mesh { mesh: Mesh },
 }
 
 #[derive(Debug)]
-pub struct CollisionManifold {
-    pub normal: VecN,
-    pub depth: N64,
-    pub contacts: Vec<VecN>,
+pub struct CollisionManifold<T, const N: usize> {
+    pub normal: VecN<T, N>,
+    pub depth: T,
+    pub contacts: Vec<VecN<T, N>>,
 }
 
 // #[derive(Copy, Clone)]
@@ -60,32 +60,43 @@ pub struct CollisionManifold {
 //     EdgeFace(EdgeFaceContact),
 // }
 
-pub struct CollisionDetection {
+pub struct CollisionDetection<T, const N: usize> {
+    numbertype: PhantomData<T>
 }
 
-impl CollisionDetection {
+impl<T, const N: usize> CollisionDetection<T, N> where T: 
+Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
+Mul<Output = T> + Div<Output = T> +
+AddAssign + DivAssign +
+PartialOrd +
+Sum +
+Sqrt + Abs + Signum +
+Zero + One + Two + MinMaxValue +
+FromUsize +
+Copy {
     pub fn new() -> Self {
         Self {
+            numbertype: PhantomData,
         }
     }
 
     pub fn detect_collisions(
         &mut self,
         key: (usize, usize),
-        a: &Body,
-        b: &Body,
-    ) -> Option<CollisionManifold> {
+        a: &Body<T, N>,
+        b: &Body<T, N>,
+    ) -> Option<CollisionManifold<T, N>> {
         match (&a.collider, &b.collider) {
             (Collider::HalfSpace { normal }, Collider::Sphere { radius }) => {
-                let plane_distance = a.pos.linear.dot(normal);
-                let sphere_distance = b.pos.linear.dot(normal);
+                let plane_distance = a.pos.linear.dot(*normal);
+                let sphere_distance = b.pos.linear.dot(*normal);
 
                 let center_distance = sphere_distance - plane_distance;
                 if center_distance < *radius {
                     Some(CollisionManifold {
                         normal: normal.clone(),
                         depth: *radius - center_distance,
-                        contacts: vec![&b.pos.linear - *radius * normal],
+                        contacts: vec![b.pos.linear - *normal * *radius],
                     })
                 } else {
                     None
@@ -95,7 +106,7 @@ impl CollisionDetection {
                 // Just call this again with the arguments swapped
                 let mut manifold = self.detect_collisions((key.1, key.0), b, a);
                 if let Some(m) = &mut manifold {
-                    m.normal = -&m.normal;
+                    m.normal = -m.normal;
                 }
                 manifold
             }
@@ -103,13 +114,13 @@ impl CollisionDetection {
                 Collider::Sphere { radius: radius_a },
                 Collider::Sphere { radius: radius_b },
             ) => {
-                let displacement = &b.pos.linear - &a.pos.linear;
+                let displacement = b.pos.linear - a.pos.linear;
                 let depth = *radius_a + *radius_b - displacement.length();
-                if depth > 0.0 {
+                if depth > T::zero() {
                     let normal = displacement.normalize();
                     Some(CollisionManifold {
                         // contacts: vec![&a.pos.linear + depth * &normal],
-                        contacts: vec![&a.pos.linear + (*radius_a - depth/2.0) * &normal],
+                        contacts: vec![a.pos.linear + normal * (*radius_a - depth / T::two())],
                         normal,
                         depth,
                     })
@@ -118,15 +129,15 @@ impl CollisionDetection {
                 }
             }
             (Collider::HalfSpace { normal }, Collider::Polytope { maxradius, poly }) => {
-                let sphere_distance = b.pos.linear.dot(normal);
+                let sphere_distance = b.pos.linear.dot(*normal);
                 if sphere_distance > *maxradius {
                     return None;
                 }
 
                 let p = b.body_pos_to_world(&poly.support(&-b.world_vec_to_body(normal)));
-                let dist = normal.dot(&p);
+                let dist = normal.dot(p);
 
-                if dist < 0.0 {
+                if dist < T::zero() {
                     Some(CollisionManifold {
                         normal: normal.clone(),
                         depth: -dist,
@@ -140,7 +151,7 @@ impl CollisionDetection {
                 // Just call this again with the arguments swapped
                 let mut manifold = self.detect_collisions((key.1, key.0), b, a);
                 if let Some(m) = &mut manifold {
-                    m.normal = -&m.normal;
+                    m.normal = -m.normal;
                 }
                 manifold
             }
