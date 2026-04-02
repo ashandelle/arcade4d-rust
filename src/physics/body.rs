@@ -8,10 +8,16 @@ pub struct Material<T> {
 }
 
 #[derive(Debug, Clone)]
-pub struct Momentum<T, const N: usize> {
+pub struct Velocity<T, const N: usize> {
     pub linear: VecN<T, N>,
     pub angular: BiVecN<T, N>,
 }
+
+// #[derive(Debug, Clone)]
+// pub struct Momentum<T, const N: usize> {
+//     pub linear: VecN<T, N>,
+//     pub angular: BiVecN<T, N>,
+// }
 
 // impl fmt::Display for Momentum {
 //     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -47,7 +53,8 @@ pub struct Body<T, const N: usize> {
     pub stationary: bool,
 
     pub pos: Position<T, N>,
-    pub mom: Momentum<T, N>,
+    // pub mom: Momentum<T, N>,
+    pub vel: Velocity<T, N>,
 
     pub collider: Collider<T, N>,
     pub render: Render<T, N>,
@@ -69,24 +76,35 @@ Copy {
         world_contact: &VecN<T, N>,
     ) {
         if !self.stationary {
-            let body_contact = *world_contact - self.pos.linear;
-            let delta_angular_mom = body_contact ^ *impulse;
+            // let body_contact = *world_contact - self.pos.linear;
+            // let delta_angular_mom = body_contact ^ *impulse;
 
-            self.mom.linear = self.mom.linear + *impulse;
-            self.mom.angular = self.mom.angular + delta_angular_mom;
+            // self.mom.linear = self.mom.linear + *impulse;
+            // self.mom.angular = self.mom.angular + delta_angular_mom;
+            let body_contact = self.world_pos_to_body(world_contact);
+            let delta_angular_vel = self.inverse_moment_of_inertia(
+                &(body_contact ^ (self.pos.angular.transpose() * *impulse)),
+            );
+
+            self.vel.linear = self.vel.linear + *impulse / self.mass;
+            self.vel.angular = self.vel.angular + delta_angular_vel;
         }
     }
 
     pub fn step(&mut self, gravity: &VecN<T, N>, eps: T, dt: T) {
         if !self.stationary {
             // apply gravity
-            self.mom.linear = self.mom.linear + (*gravity) * (self.mass * dt);
+            // self.mom.linear = self.mom.linear + (*gravity) * (self.mass * dt);
+            self.vel.linear = self.vel.linear + (*gravity) * dt;
 
-            self.pos.linear = self.pos.linear + self.mom.linear / self.mass * dt;
+            // self.pos.linear = self.pos.linear + self.mom.linear / self.mass * dt;
+            self.pos.linear = self.pos.linear + self.vel.linear * dt;
             
-            let mut angvelocity = self.body_bivec_to_world(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)));
-            let rot = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * (dt / T::two())).orthonormalize(eps, 128);
-            angvelocity = rot * self.inverse_moment_of_inertia(&(rot.transpose() * self.mom.angular));
+            // let mut angvelocity = self.body_bivec_to_world(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)));
+            // let rot = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * (dt / T::two())).orthonormalize(eps, 128);
+            // angvelocity = rot * self.inverse_moment_of_inertia(&(rot.transpose() * self.mom.angular));
+            // self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalize(eps, 128);
+            let angvelocity = self.vel.angular;
             self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalize(eps, 128);
         }
     }
@@ -122,13 +140,20 @@ Copy {
 
     pub fn vel_at(&self, world_pos: &VecN<T, N>) -> VecN<T, N> {
         if self.mass > T::zero() {
-            let body_pos = self.world_pos_to_body(&world_pos);
+            // let body_pos = self.world_pos_to_body(&world_pos);
+
+            // let rot_vel = self.body_vec_to_world(
+            //     &body_pos.left_contract(self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)))
+            // );
+
+            // self.mom.linear / self.mass + rot_vel
+            let body_pos = self.world_pos_to_body(world_pos);
 
             let rot_vel = self.body_vec_to_world(
-                &body_pos.left_contract(self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)))
+                &body_pos.left_contract(self.vel.angular),
             );
 
-            self.mom.linear / self.mass + rot_vel
+            self.vel.linear + rot_vel
         } else {
             VecN::zero()
         }

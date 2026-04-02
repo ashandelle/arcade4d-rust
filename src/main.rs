@@ -8,7 +8,7 @@ use std::time::Instant;
 
 // use crate::mathnd::{BiVecN, MatN, VecN};
 use crate::mathnd::*;
-use crate::physics::{Body, Collider, Inertia, Material, Momentum, Object, Polytope, Position, Render, World};
+use crate::physics::{Body, Collider, Inertia, Material, Velocity, Object, Polytope, Position, Render, World};
 
 use image::{ImageBuffer, Rgb, RgbImage};
 use noisy_float::prelude::*;
@@ -59,7 +59,11 @@ fn main() {
                 linear: Vector::zero(),
                 angular: MatN::identity(),
             },
-            mom: Momentum {
+            // mom: Momentum {
+            //     linear: Vector::zero(),
+            //     angular: BiVecN::zero(),
+            // },
+            vel: Velocity {
                 linear: Vector::zero(),
                 angular: BiVecN::zero(),
             },
@@ -115,7 +119,7 @@ fn main() {
                     ),
                 }.orthonormalize(Num::fromf64(1e-8), 128),
             },
-            mom: Momentum {
+            vel: Velocity {
                 // linear: VecN {
                 //     e: (0..dim).map(|_x| n64(0.01) * n64(rng.sample(StandardNormal))).collect()
                 // },
@@ -128,7 +132,7 @@ fn main() {
                     },
                 }.skew() * Num::fromf64(0.05) + BiVecN::basis(0, 1),
             },
-            collider: Collider::Polytope { maxradius: Num::fromf32(1.0), poly: Polytope::orthoplex() },
+            collider: Collider::Polytope { maxradius: Num::fromf32(1.0), poly: Polytope::octahedron() },
             render: Render::Orthoplex { radius: Num::fromf32(1.0) },
             material: Material {
                 restitution: Num::fromf32(0.4),

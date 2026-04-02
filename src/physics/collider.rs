@@ -134,14 +134,24 @@ Copy {
                     return None;
                 }
 
-                let p = b.body_pos_to_world(&poly.support(&-b.world_vec_to_body(normal)));
-                let dist = normal.dot(p);
+                let supports = poly.support(&-b.world_vec_to_body(normal));
+                let p: [VecN<T, N>; N] = std::array::from_fn(|i| b.body_pos_to_world(&supports[i]));
+                let dist = normal.dot(p[0]);
+
+
 
                 if dist < T::zero() {
                     Some(CollisionManifold {
-                        normal: normal.clone(),
+                        normal: *normal,
                         depth: -dist,
-                        contacts: vec![p],
+                        contacts: p.iter().filter_map(|point| {
+                            let dist = normal.dot(*point);
+                            if dist < T::zero() {
+                                Some(*point)
+                            } else {
+                                None
+                            }
+                        }).collect(),
                     })
                 } else {
                     None

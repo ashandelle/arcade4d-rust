@@ -1,106 +1,95 @@
 use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::mathnd::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero};
+use crate::{mathnd::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero}, physics::SimplePolytope};
 
 #[derive(Clone)]
 pub struct Polytope<T, const N: usize> {
-    center: VecN<T, N>,
-    zonotopes: Vec<Vec<VecN<T, N>>>,
-    zextend: Vec<Vec<bool>>,
-    vertices: Vec<VecN<T, N>>,
-    vextend: Vec<bool>,
+    pub center: VecN<T, N>,
+    pub elements: [SimplePolytope<T, N>; N],
 }
 
 impl<T, const N: usize> Polytope<T, N> where T: 
-Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
-Mul<Output = T> + Div<Output = T> +
-AddAssign + DivAssign +
-PartialOrd +
-Sum +
-Sqrt + Abs + Signum +
-Zero + One + Two + MinMaxValue +
-FromUsize +
-Copy {
-    pub fn support(&self, dir: &VecN<T, N>) -> VecN<T, N> {
-        let mut dist: T = T::minimum();
-        let mut furthest: VecN<T, N> = VecN::zero();
-
-        for i in 0..self.zonotopes.len() {
-            let zonotope = &self.zonotopes[i];
-            let extentions = &self.zextend[i];
-            let mut dot: T = T::zero();
-            let mut point: VecN<T, N> = VecN::zero();
-            for j in 0..zonotope.len() {
-                let generator = &zonotope[j];
-                let extend = extentions[j];
-                let d: T = generator.dot(*dir);
-                if extend {
-                    dot += d.abs();
-                    point = point + *generator * d.signum();
-                } else if d > T::zero() {
-                    dot += d;
-                    point = point + *generator;
-                }
-            }
-            if dot > dist {
-                dist = dot;
-                furthest = point;
-            }
-        }
-
-        for i in 0..self.vertices.len() {
-            let vertex = &self.vertices[i];
-            let extend = self.vextend[i];
-            let dot: T = vertex.dot(*dir);
-            if extend && dot.abs() > dist {
-                dist = dot.abs();
-                furthest = *vertex * dot.signum();
-            } else if dot > dist {
-                dist = dot;
-                furthest = *vertex;
-            }
-        }
-
-        furthest + self.center
+Add<Output = T> + Mul<Output = T> + AddAssign +
+PartialOrd + Sum + Abs + Signum + Zero + One + MinMaxValue +
+FromUsize + Copy {
+    pub fn support(&self, dir: &VecN<T, N>) -> [VecN<T, N>; N] {
+        std::array::from_fn(|i| self.elements[i].support(dir) + self.center)
     }
 
-    // pub fn nearest_point(&self, dir: &VecN) -> VecN {
+    pub fn elementsupport(&self, dir: &VecN<T, N>, element: usize) -> VecN<T, N> {
+        self.elements[element].support(dir) + self.center
+    }
 
+    // pub fn dual(&self) -> Polytope<T, N> {
+    //     Polytope {
+    //         elements: std::array::from_fn(|i| ((*self).elements[N - i - 1]).clone()),
+    //     }
     // }
+}
 
+impl<T> Polytope<T, 3> where T: Div<Output = T> + Zero + One + FromUsize + Copy {
     pub fn cube() -> Self {
-        let mut verts: Vec<VecN<T, N>> = Vec::new();
-        let mut exts: Vec<bool> = Vec::new();
-
-        for i in 0..N {
-            verts.push(VecN::basis(i));
-            exts.push(true);
-        }
-
-        Self {
-            center: VecN::zero(),
-            zonotopes: vec![verts],
-            zextend: vec![exts],
+        let verts: SimplePolytope<T, 3> = SimplePolytope {
+            // center: VecN::<T, 3>::zero(),
+            zonotopes: vec![vec![
+                VecN::basis(0),
+                VecN::basis(1),
+                VecN::basis(2),
+            ]],
+            zextend: vec![vec![true; 3]],
             vertices: Vec::new(),
             vextend: Vec::new(),
+        };
+        let edges: SimplePolytope<T, 3> = SimplePolytope {
+            zonotopes: vec![
+                vec![
+                    VecN::basis(0),
+                    VecN::basis(1),
+                ],
+                vec![
+                    VecN::basis(0),
+                    VecN::basis(2),
+                ],
+                vec![
+                    VecN::basis(1),
+                    VecN::basis(2),
+                ]
+            ],
+            zextend: vec![vec![true; 2]; 3],
+            vertices: Vec::new(),
+            vextend: Vec::new(),
+        };
+        let faces: SimplePolytope<T, 3> = SimplePolytope {
+            zonotopes: Vec::new(),
+            zextend: Vec::new(),
+            vertices: vec![
+                VecN::basis(0),
+                VecN::basis(1),
+                VecN::basis(2),
+            ],
+            vextend: vec![true; 3],
+        };
+        Polytope {
+            center: VecN::<T, 3>::zero(),
+            elements: [verts, edges, faces],
         }
     }
 
-    pub fn orthoplex() -> Self {
-        let mut verts: Vec<VecN<T, N>> = Vec::new();
-        let mut exts: Vec<bool> = Vec::new();
+    pub fn octahedron() -> Self {
+        let mut cube = Self::cube();
+        cube.elements.reverse();
 
-        for i in 0..N {
-            verts.push(VecN::basis(i));
-            exts.push(true);
+        for (i, element) in cube.elements.iter_mut().enumerate() {
+            for zonotope in element.zonotopes.iter_mut() {
+                for vec in zonotope.iter_mut() {
+                    *vec = *vec / T::fromusize(i+1);
+                }
+            }
+            for vec in element.vertices.iter_mut() {
+                *vec = *vec / T::fromusize(i+1);
+            }
         }
 
-        Self {
-            center: VecN::zero(),
-            zonotopes: Vec::new(),
-            zextend: Vec::new(),
-            vertices: verts,
-            vextend: exts,
-        }
+        cube
     }
 }
