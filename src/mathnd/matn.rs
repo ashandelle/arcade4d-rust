@@ -167,20 +167,6 @@ impl<T, const N: usize> MatN<T, N> {
         mat
     }
 
-    // pub fn mult_transpose(&self, v: VecN) -> VecN {
-    //     VecN {
-    //         e: self.transpose().e.iter()
-    //             .map(|x| x.dot(&v))
-    //             .collect(),
-    //     }
-    // }
-
-    // pub fn mult_transpose_bivecn(&self, v: &BiVecN) -> BiVecN {
-    //     BiVecN {
-    //         m: (self.transpose() * &v.m) * self,
-    //     }.skew()
-    // }
-
     // Inverse
     pub fn inverse(&self, eps: T, max: usize) -> MatN<T, N> where
         T: Mul<Output = T> + Sub<Output = T> + Div<Output = T> + PartialOrd + Sum + Zero + One + Two + FromUsize + Copy {

@@ -34,12 +34,6 @@ impl<T, const N: usize> Sub for VecN<T, N> where T: Sub<Output = T> + Copy {
     }
 }
 
-// impl<T, const N: usize> Mul<VecN<T, N>> for T where T: Mul<Output = T> + Copy {
-//     type Output = VecN<T, N>;
-//     fn mul(self, v: VecN<T, N>) -> VecN<T, N> {
-//         VecN::new(std::array::from_fn(|i| self * v.e[i]))
-//     }
-// }
 impl<T, const N: usize> Mul<T> for VecN<T, N> where T: Mul<Output = T> + Copy {
     type Output = VecN<T, N>;
     fn mul(self, s: T) -> VecN<T, N> {
@@ -57,21 +51,6 @@ impl<T, const N: usize> Div<T> for VecN<T, N> where T: Div<Output = T> + Copy {
 impl<T, const N: usize> BitXor for VecN<T, N> where T: Sub<Output = T> + Mul<Output = T> + Div<Output = T> + Two + Copy {
     type Output = BiVecN<T, N>;
     fn bitxor(self, v: VecN<T, N>) -> BiVecN<T, N> {
-        // let mut vecs: Vec<VecN> = Vec::new();
-
-        // for i in 0..v.e.len() {
-        //     let mut vec: Vec<f64> = Vec::new();
-        //     for j in 0..v.e.len() {
-        //         vec.push(
-        //             self.e[i] * v.e[j] - self.e[j] * v.e[i]
-        //         );
-        //     }
-        //     vecs.push(VecN{e: vec});
-        // }
-
-        // BiVecN {
-        //     m: MatN{e: vecs},
-        // }.skew()
         BiVecN {
             m: MatN::mult_transpose_vecn(self, v) - MatN::mult_transpose_vecn(v, self),
         }.skew()
@@ -160,22 +139,6 @@ impl<T, const N: usize> VecN<T, N> {
     
         vecs
     }
-
-    // pub fn to_bivecn(&self) -> BiVecN {
-    //     let dim = ((2.0*(self.e.len() as f64) + 0.25).sqrt() + 0.5).round() as usize;
-    //     let mut b = BiVecN::zero(dim);
-    //
-    //     let mut k = 0;
-    //     for i in 0..dim {
-    //         for j in (i+1)..dim {
-    //             b.m.e[i].e[j] = self.e[k];
-    //             b.m.e[j].e[i] = -self.e[k];
-    //             k+=1;
-    //         }
-    //     }
-    //
-    //     b
-    // }
 
     // Zero
     pub fn zero() -> Self where T: Zero + Copy {

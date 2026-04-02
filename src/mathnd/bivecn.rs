@@ -2,8 +2,6 @@ use std::{iter::Sum, ops::{Add, Div, Mul, Neg, Sub}};
 
 use crate::mathnd::{MatN, One, Sqrt, Two, Zero};
 
-// type VecB<T, const N: usize> = VecN<T, {(N * N - N) / 2}>;
-
 #[derive(Debug, Clone, Copy)]
 pub struct BiVecN<T, const N: usize> {
     pub m: MatN<T, N>,
@@ -113,22 +111,6 @@ impl<T, const N: usize> BiVecN<T, N> {
     pub fn to_matn(self) -> MatN<T, N> {
         self.m
     }
-
-    // pub fn to_vecn(&self) -> VecN<T, {(N * N - N) / 2}> where T: Zero + Copy {
-    //     let mut v: [T; (N * N - N) / 2] = [T::zero(); (N * N - N) / 2];
-
-    //     let mut k = 0;
-    //     for i in 0..N {
-    //         for j in (i+1)..N {
-    //             v[k] = self.get_ij(i, j);
-    //             k+=1;
-    //         }
-    //     }
-
-    //     VecN {
-    //         e: v,
-    //     }
-    // }
 
     // Zero
     pub fn zero() -> Self where T: Zero + Copy {
