@@ -1,6 +1,8 @@
 use std::{fmt, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::{mathnd::{Abs, BiVecN, FromUsize, MatN, Sqrt, Two, VecN, Zero}, physics::{Collider, Render}};
+use crate::physics::{Collider, Render};
+
+use mathnd::{vecn::VecN, matn::MatN, bivecn::BiVecN, traits::{Abs, FromUsize, Sqrt, Two, Zero}};
 
 #[derive(Debug, Clone)]
 pub struct Material<T> {

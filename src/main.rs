@@ -6,18 +6,16 @@ use std::io::Write;
 use std::path::Path;
 use std::time::Instant;
 
-// use crate::mathnd::{BiVecN, MatN, VecN};
-use crate::mathnd::*;
 use crate::physics::{Body, Collider, Inertia, Material, Velocity, Object, Polytope, Position, Render, World};
 
+use mathnd::{bivecn::BiVecN, matn::MatN, traits::*, vecn::VecN};
 use image::{ImageBuffer, Rgb, RgbImage};
 use noisy_float::prelude::*;
 use rand::Rng;
 use rand_distr::StandardNormal;
 
-mod mathnd;
 mod physics;
-mod n64traits;
+// mod n64traits;
 
 type Num = f64;
 const DIM: usize = 3;

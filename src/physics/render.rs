@@ -1,6 +1,8 @@
 use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::{mathnd::{Abs, FromUsize, MinMax, MinMaxValue, Sqrt, Two, VecN, Zero}, physics::Body};
+use crate::physics::Body;
+
+use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMax, MinMaxValue, Sqrt, Two, Zero}};
 
 #[derive(Clone)]
 pub enum Render<T, const N: usize> {

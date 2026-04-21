@@ -1,6 +1,8 @@
 use std::{collections::HashMap, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub}};
 
-use crate::{mathnd::{Abs, FromFloat32, FromInt32, FromUsize, MinMax, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero}, physics::{Body, CollisionConstraint, CollisionDetection}};
+use crate::physics::{Body, CollisionConstraint, CollisionDetection};
+
+use mathnd::{vecn::VecN, traits::{Abs, FromFloat32, FromInt32, FromUsize, MinMax, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
 
 pub struct Object<T, const N: usize> {
     pub body: Body<T, N>,

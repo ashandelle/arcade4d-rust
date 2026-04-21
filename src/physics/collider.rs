@@ -1,6 +1,8 @@
 use std::{iter::Sum, marker::PhantomData, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::{mathnd::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero}, physics::{Body, Polytope}};
+use crate::physics::{Body, Polytope};
+
+use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
 
 #[derive(Clone)]
 pub enum Collider<T, const N: usize> {

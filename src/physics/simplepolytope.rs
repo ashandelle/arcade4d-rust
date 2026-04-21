@@ -1,6 +1,6 @@
 use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
-use crate::mathnd::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, VecN, Zero};
+use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
 
 #[derive(Clone)]
 pub struct SimplePolytope<T, const N: usize> {

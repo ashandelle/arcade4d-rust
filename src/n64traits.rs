@@ -1,5 +1,5 @@
 use noisy_float::prelude::*;
-use crate::mathnd::*;
+use mathnd::traits::*;
 
 impl Sqrt for N64 {
     fn sqrt(self) -> N64 {

@@ -1,7 +1,7 @@
 use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub}};
 
 use super::{Body, CollisionManifold};
-use crate::mathnd::{Abs, FromFloat32, FromUsize, MinMax, One, Sqrt, Two, VecN, Zero};
+use mathnd::{vecn::VecN, traits::{Abs, FromFloat32, FromUsize, MinMax, One, Sqrt, Two, Zero}};
 
 #[derive(Debug)]
 pub struct ContactState<T, const N: usize> where [(); N-1]: Sized {
