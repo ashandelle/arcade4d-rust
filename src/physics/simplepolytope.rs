@@ -1,6 +1,7 @@
-use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
+use std::{iter::Sum, ops::{Add, AddAssign, Mul}};
 
-use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
+use mathnd::vecn::VecN;
+use num_traits::{Bounded, FromPrimitive, One, Signed, Zero};
 
 #[derive(Clone)]
 pub struct SimplePolytope<T, const N: usize> {
@@ -17,12 +18,12 @@ Mul<Output = T> +
 AddAssign +
 PartialOrd +
 Sum +
-Abs + Signum +
-Zero + One + MinMaxValue +
-FromUsize +
+Sized + Signed +
+Zero + One + Bounded +
+FromPrimitive +
 Copy {
     pub fn support(&self, dir: &VecN<T, N>) -> VecN<T, N> {
-        let mut dist: T = T::minimum();
+        let mut dist: T = T::min_value();
         let mut furthest: VecN<T, N> = VecN::zero();
 
         for i in 0..self.zonotopes.len() {

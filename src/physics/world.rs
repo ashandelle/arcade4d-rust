@@ -1,8 +1,9 @@
-use std::{collections::HashMap, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub}};
+use std::{collections::HashMap, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign}};
 
 use crate::physics::{Body, CollisionConstraint, CollisionDetection};
 
-use mathnd::{vecn::VecN, traits::{Abs, FromFloat32, FromInt32, FromUsize, MinMax, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
+use mathnd::{vecn::VecN, traits::{MinMax, Sqrt, Two}};
+use num_traits::{Bounded, FromPrimitive, One, Signed, Zero};
 
 pub struct Object<T, const N: usize> {
     pub body: Body<T, N>,
@@ -21,12 +22,12 @@ pub struct World<T, const N: usize> {
 impl<T, const N: usize> World<T, N> where T: 
 Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
 Mul<Output = T> + Div<Output = T> +
-AddAssign + DivAssign + MulAssign +
+AddAssign + SubAssign + DivAssign + MulAssign +
 PartialOrd + MinMax +
 Sum +
-Sqrt + Abs + Signum +
-Zero + One + Two + MinMaxValue +
-FromUsize + FromFloat32 + FromInt32 +
+Sqrt + Signed +
+Zero + One + Two + Bounded +
+FromPrimitive +
 Copy,
 [(); N-1]: Sized {
     pub fn new(eps: T) -> Self {
@@ -68,9 +69,9 @@ Copy,
                 CollisionConstraint::new(
                     manifold,
                     &self.objects[i].body,
-                    T::fromi32(mass_adjustments[&i]),
+                    T::from_i32(mass_adjustments[&i]).unwrap(),
                     &self.objects[j].body,
-                    T::fromi32(mass_adjustments[&j]),
+                    T::from_i32(mass_adjustments[&j]).unwrap(),
                 ),
             ));
         }

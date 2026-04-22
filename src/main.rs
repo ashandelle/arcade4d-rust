@@ -8,7 +8,8 @@ use std::time::Instant;
 
 use crate::physics::{Body, Collider, Inertia, Material, Velocity, Object, Polytope, Position, Render, World};
 
-use mathnd::{bivecn::BiVecN, matn::MatN, traits::*, vecn::VecN};
+use num_traits::{FromPrimitive, ToPrimitive, Zero};
+use mathnd::{bivecn::BiVecN, matn::MatN, vecn::VecN};
 use image::{ImageBuffer, Rgb, RgbImage};
 use noisy_float::prelude::*;
 use rand::Rng;
@@ -28,7 +29,7 @@ fn main() {
 
     let sec = 5;
     let step = 60;
-    let dt: Num = Num::fromf64(1.0 / (step as f64));
+    let dt: Num = Num::from_f64(1.0 / (step as f64)).unwrap();
 
     let mut colors: Vec<(f64,f64,f64)> = Vec::new();
 
@@ -38,15 +39,15 @@ fn main() {
 
     let mut light: Vector = Vector {
                         // e: (0..dim).map(|_x| n64(rng.sample(StandardNormal))).collect()
-                        e: std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))),
+                        e: std::array::from_fn(|i| Num::from_f64(rng.sample(StandardNormal)).unwrap()),
                     };
-    light.e[0] = Num::fromf32(-4.0);
+    light.e[0] = Num::from_f32(-4.0).unwrap();
     light.e[1] *= (DIM/2) as f64;
     light.e[DIM-1] *= (DIM/2) as f64;
-    light = light.normalize();
+    light.normalize();
 
-    let mut world: World<Num, DIM> = World::new(Num::fromf64(1e-8));
-    world.gravity = Vector::basis(0) * Num::fromf64(-9.8);
+    let mut world: World<Num, DIM> = World::new(Num::from_f64(1e-8).unwrap());
+    world.gravity = Vector::basis(0) * Num::from_f64(-9.8).unwrap();
 
     world.objects.push(Object {
         body: Body {
@@ -72,7 +73,7 @@ fn main() {
                 normal: Vector::basis(0),
             },
             material: Material {
-                restitution: Num::fromf32(0.4),
+                restitution: Num::from_f32(0.4).unwrap(),
             },
         },
     });
@@ -106,16 +107,16 @@ fn main() {
 
     world.objects.push(Object {
         body: Body {
-            mass: Num::fromf32(1.0),
-            inertia: Inertia::Scalar { s: Num::fromf32(1.0) },
+            mass: Num::from_f32(1.0).unwrap(),
+            inertia: Inertia::Scalar { s: Num::from_f32(1.0).unwrap() },
             stationary: false,
             pos: Position {
-                linear: VecN::basis(0) * Num::fromf32(4.0),
+                linear: VecN::basis(0) * Num::from_f32(4.0).unwrap(),
                 angular: MatN {
                     e: std::array::from_fn(|i|
-                        Vector::new(std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))))
+                        Vector::new(std::array::from_fn(|i| Num::from_f64(rng.sample(StandardNormal)).unwrap()))
                     ),
-                }.orthonormalize(Num::fromf64(1e-8), 128),
+                }.orthonormalized(Num::from_f64(1e-8).unwrap(), 128),
             },
             vel: Velocity {
                 // linear: VecN {
@@ -125,15 +126,15 @@ fn main() {
                 angular: BiVecN {
                     m: MatN {
                         e: std::array::from_fn(|i|
-                            Vector::new(std::array::from_fn(|i| Num::fromf64(rng.sample(StandardNormal))))
+                            Vector::new(std::array::from_fn(|i| Num::from_f64(rng.sample(StandardNormal)).unwrap()))
                         ),
                     },
-                }.skew() * Num::fromf64(0.05) + BiVecN::basis(0, 1),
+                }.skew() * Num::from_f64(0.05).unwrap() + BiVecN::basis(0, 1),
             },
-            collider: Collider::Polytope { maxradius: Num::fromf32(1.0), poly: Polytope::octahedron() },
-            render: Render::Orthoplex { radius: Num::fromf32(1.0) },
+            collider: Collider::Polytope { maxradius: Num::from_f32(1.0).unwrap(), poly: Polytope::octahedron() },
+            render: Render::Orthoplex { radius: Num::from_f32(1.0).unwrap() },
             material: Material {
-                restitution: Num::fromf32(0.4),
+                restitution: Num::from_f32(0.4).unwrap(),
             },
         },
     });
@@ -178,7 +179,7 @@ fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<O
     // Create a new ImageBuffer with the specified dimensions and pixel type (Rgb in this case)
     let mut buffer: RgbImage = ImageBuffer::new(IMAGE_WIDTH, IMAGE_HEIGHT);
 
-    let pos = VecN::basis(0) * Num::fromf32(2.0) + VecN::basis(DIM-1) * Num::fromf32(-4.0);
+    let pos = VecN::basis(0) * Num::from_f32(2.0).unwrap() + VecN::basis(DIM-1) * Num::from_f32(-4.0).unwrap();
 
     let MAX_STEPS = 500;
     let MAX_DIST = 1e4;
@@ -214,21 +215,22 @@ fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<O
 
     // Iterate over the pixels and set their color values
     for (x, y, pixel) in buffer.enumerate_pixels_mut() {
-        let fx: Num = Num::fromf64(2.0 * (x as f64 / (IMAGE_WIDTH - 1) as f64) - 1.0);
-        let fy: Num = Num::fromf64(-2.0 * (y as f64 / (IMAGE_HEIGHT - 1) as f64) + 1.0);
+        let fx: Num = Num::from_f64(2.0 * (x as f64 / (IMAGE_WIDTH - 1) as f64) - 1.0).unwrap();
+        let fy: Num = Num::from_f64(-2.0 * (y as f64 / (IMAGE_HEIGHT - 1) as f64) + 1.0).unwrap();
 
         // Calculate RGB values based on coordinates
         let mut r = 0.0;
         let mut g = 0.0;
         let mut b = 0.0;
 
-        let vec = (VecN::basis(0) * fy + VecN::basis(1) * fx + VecN::basis(DIM-1)).normalize();
+        let mut vec = (VecN::basis(0) * fy + VecN::basis(1) * fx + VecN::basis(DIM-1));
+        vec.normalize();
         let mut t: Num = Num::zero();
 
         for _i in 0..MAX_STEPS {
             let loc: Vector = pos + vec * t;
 
-            let mut dist: Num = MinMaxValue::maximum();
+            let mut dist: Num = Num::max_value();
             let mut id = culled.len();
 
             for j in 0..culled.len() {
@@ -252,19 +254,19 @@ fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<O
 
             if dist < EPS {
                 let mut v = [Num::zero(); DIM];
-                for i in (0..DIM) {
+                for i in 0..DIM {
                     let mut dloc = loc.clone();
                     dloc.e[i] = dloc.e[i] + EPS * 1e-2;
                     v[i] = culled[id].body.render.sdf(&culled[id].body, &dloc) - dist;
                 }
                 let norm = VecN {
                     e: v,
-                }.normalize();
+                }.normalized();
 
                 (r,g,b) = match &culled[id].body.collider {
                     Collider::HalfSpace { normal: _normal } => {
                         let s: i32 = loc.e.iter()
-                            .map(|x| Num::toi32(x.round()))
+                            .map(|x| Num::to_i32(&x.round()).unwrap())
                             .sum();
                         if s % 2 == 0 {
                             (0.25,0.25,0.25)
@@ -287,8 +289,8 @@ fn render(n: usize, colors: &Vec<(f64,f64,f64)>, light: &Vector, objects: &Vec<O
                     },
                 };
                 
-                let mut f = 10.0 / (t.tof64() + 10.0);
-                f *= (norm.dot(*light).tof64() - 3.0) / -4.0;
+                let mut f = 10.0 / (t.to_f64().unwrap() + 10.0);
+                f *= (norm.dot(*light).to_f64().unwrap() - 3.0) / -4.0;
 
                 r *= f;
                 g *= f;

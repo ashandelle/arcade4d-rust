@@ -2,7 +2,8 @@ use std::{iter::Sum, marker::PhantomData, ops::{Add, AddAssign, Div, DivAssign, 
 
 use crate::physics::{Body, Polytope};
 
-use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
+use mathnd::{vecn::VecN, traits::{Sqrt, Two}};
+use num_traits::{Bounded, FromPrimitive, One, Signed, Zero};
 
 #[derive(Clone)]
 pub enum Collider<T, const N: usize> {
@@ -72,9 +73,9 @@ Mul<Output = T> + Div<Output = T> +
 AddAssign + DivAssign +
 PartialOrd +
 Sum +
-Sqrt + Abs + Signum +
-Zero + One + Two + MinMaxValue +
-FromUsize +
+Sqrt + Signed +
+Zero + One + Two + Bounded +
+FromPrimitive +
 Copy {
     pub fn new() -> Self {
         Self {
@@ -119,7 +120,7 @@ Copy {
                 let displacement = b.pos.linear - a.pos.linear;
                 let depth = *radius_a + *radius_b - displacement.length();
                 if depth > T::zero() {
-                    let normal = displacement.normalize();
+                    let normal = displacement.normalized();
                     Some(CollisionManifold {
                         // contacts: vec![&a.pos.linear + depth * &normal],
                         contacts: vec![a.pos.linear + normal * (*radius_a - depth / T::two())],

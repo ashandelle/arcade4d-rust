@@ -1,7 +1,8 @@
-use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub}};
+use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign}};
 
 use super::{Body, CollisionManifold};
-use mathnd::{vecn::VecN, traits::{Abs, FromFloat32, FromUsize, MinMax, One, Sqrt, Two, Zero}};
+use mathnd::{vecn::VecN, traits::{MinMax, Sqrt, Two}};
+use num_traits::{FromPrimitive, One, Signed, Zero};
 
 #[derive(Debug)]
 pub struct ContactState<T, const N: usize> where [(); N-1]: Sized {
@@ -23,12 +24,12 @@ pub struct CollisionConstraint<T, const N: usize> where [(); N-1]: Sized {
 impl<T, const N: usize> CollisionConstraint<T, N> where T: 
 Neg<Output = T> + Add<Output = T> + Sub<Output = T> +
 Mul<Output = T> + Div<Output = T> +
-AddAssign + MulAssign + DivAssign +
+AddAssign + SubAssign + MulAssign + DivAssign +
 PartialOrd +
 Sum +
-Sqrt + Abs + MinMax +
+Sqrt + Signed + MinMax +
 Zero + One + Two +
-FromUsize + FromFloat32 +
+FromPrimitive +
 Copy,
 [(); N-1]: Sized {
     pub fn new(
@@ -46,7 +47,7 @@ Copy,
 
         let e = a.material.restitution.min(b.material.restitution);
         // TODO: move this into the Material struct
-        let mu = T::fromf32(0.4);
+        let mu = T::from_f32(0.4).unwrap();
 
         let tangents: [VecN<T, N>; N-1] = normal.orthonormal_basis();
 
@@ -56,9 +57,9 @@ Copy,
                 let rel_vel = b.vel_at(&contact) - a.vel_at(&contact);
                 let rel_vel_normal = rel_vel.dot(normal);
 
-                let slop = T::fromf32(0.01);
-                let baumgarte = T::fromf32(0.2);
-                let bias = -baumgarte * T::fromf32(60.0) * (slop - depth).min(T::zero())
+                let slop = T::from_f32(0.01).unwrap();
+                let baumgarte = T::from_f32(0.2).unwrap();
+                let bias = -baumgarte * T::from_f32(60.0).unwrap() * (slop - depth).min(T::zero())
                     + if rel_vel_normal < -T::one() {
                         -e * rel_vel_normal
                     } else {

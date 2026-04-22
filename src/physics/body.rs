@@ -2,7 +2,8 @@ use std::{fmt, iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
 use crate::physics::{Collider, Render};
 
-use mathnd::{vecn::VecN, matn::MatN, bivecn::BiVecN, traits::{Abs, FromUsize, Sqrt, Two, Zero}};
+use mathnd::{vecn::VecN, matn::MatN, bivecn::BiVecN, traits::{Sqrt, Two}};
+use num_traits::{FromPrimitive, Signed, Zero};
 
 #[derive(Debug, Clone)]
 pub struct Material<T> {
@@ -68,9 +69,9 @@ Mul<Output = T> + Div<Output = T> +
 AddAssign + DivAssign +
 PartialOrd +
 Sum +
-Sqrt + Abs +
+Sqrt + Signed +
 Zero + Two +
-FromUsize +
+FromPrimitive +
 Copy {
     pub fn resolve_impulse(
         &mut self,
@@ -103,11 +104,11 @@ Copy {
             self.pos.linear = self.pos.linear + self.vel.linear * dt;
             
             // let mut angvelocity = self.body_bivec_to_world(&self.inverse_moment_of_inertia(&self.world_bivec_to_body(&self.mom.angular)));
-            // let rot = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * (dt / T::two())).orthonormalize(eps, 128);
+            // let rot = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * (dt / T::two())).orthonormalized(eps, 128);
             // angvelocity = rot * self.inverse_moment_of_inertia(&(rot.transpose() * self.mom.angular));
-            // self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalize(eps, 128);
+            // self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalized(eps, 128);
             let angvelocity = self.vel.angular;
-            self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalize(eps, 128);
+            self.pos.angular = (self.pos.angular + (angvelocity.to_matn() * self.pos.angular) * dt).orthonormalized(eps, 128);
         }
     }
 

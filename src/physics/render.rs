@@ -2,7 +2,8 @@ use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
 
 use crate::physics::Body;
 
-use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMax, MinMaxValue, Sqrt, Two, Zero}};
+use mathnd::{vecn::VecN, traits::{MinMax, Sqrt, Two}};
+use num_traits::{Bounded, FromPrimitive, Signed, Zero};
 
 #[derive(Clone)]
 pub enum Render<T, const N: usize> {
@@ -18,9 +19,9 @@ Mul<Output = T> + Div<Output = T> +
 AddAssign + DivAssign +
 PartialOrd + MinMax +
 Sum +
-Sqrt + Abs +
-Zero + Two + MinMaxValue +
-FromUsize +
+Sqrt + Signed +
+Zero + Two + Bounded +
+FromPrimitive +
 Copy {
     pub fn sdf(&self, body: &Body<T, N>, vec: &VecN<T, N>) -> T {
         match self {
@@ -43,7 +44,7 @@ Copy {
                 //     Some(value) => *value,
                 //     None => T::zero(),
                 // }.min(T::zero());
-                let mut m = T::minimum();
+                let mut m = T::min_value();
                 for (i, elem) in p.e.iter().enumerate() {
                     m = m.max(*elem);
                 }
@@ -59,7 +60,7 @@ Copy {
                 let sum = (p.e).iter()
                     .map(|x| x.abs())
                     .sum::<T>();
-                (sum - *radius) / T::fromusize(N).sqrt()
+                (sum - *radius) / T::from_usize(N).unwrap().sqrt()
             },
         }
     }

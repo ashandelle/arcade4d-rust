@@ -1,8 +1,9 @@
-use std::{iter::Sum, ops::{Add, AddAssign, Div, DivAssign, Mul, Neg, Sub}};
+use std::{iter::Sum, ops::{Add, AddAssign, Div, Mul}};
 
 use crate::physics::SimplePolytope;
 
-use mathnd::{vecn::VecN, traits::{Abs, FromUsize, MinMaxValue, One, Signum, Sqrt, Two, Zero}};
+use mathnd::vecn::VecN;
+use num_traits::{Bounded, FromPrimitive, One, Signed, Zero};
 
 #[derive(Clone)]
 pub struct Polytope<T, const N: usize> {
@@ -12,8 +13,8 @@ pub struct Polytope<T, const N: usize> {
 
 impl<T, const N: usize> Polytope<T, N> where T: 
 Add<Output = T> + Mul<Output = T> + AddAssign +
-PartialOrd + Sum + Abs + Signum + Zero + One + MinMaxValue +
-FromUsize + Copy {
+PartialOrd + Sum + Signed + Zero + One + Bounded +
+FromPrimitive + Copy {
     pub fn support(&self, dir: &VecN<T, N>) -> [VecN<T, N>; N] {
         std::array::from_fn(|i| self.elements[i].support(dir) + self.center)
     }
@@ -29,7 +30,7 @@ FromUsize + Copy {
     // }
 }
 
-impl<T> Polytope<T, 3> where T: Div<Output = T> + Zero + One + FromUsize + Copy {
+impl<T> Polytope<T, 3> where T: Div<Output = T> + Zero + One + FromPrimitive + Copy {
     pub fn cube() -> Self {
         let verts: SimplePolytope<T, 3> = SimplePolytope {
             // center: VecN::<T, 3>::zero(),
@@ -84,11 +85,11 @@ impl<T> Polytope<T, 3> where T: Div<Output = T> + Zero + One + FromUsize + Copy 
         for (i, element) in cube.elements.iter_mut().enumerate() {
             for zonotope in element.zonotopes.iter_mut() {
                 for vec in zonotope.iter_mut() {
-                    *vec = *vec / T::fromusize(i+1);
+                    *vec = *vec / T::from_usize(i+1).unwrap();
                 }
             }
             for vec in element.vertices.iter_mut() {
-                *vec = *vec / T::fromusize(i+1);
+                *vec = *vec / T::from_usize(i+1).unwrap();
             }
         }
 
