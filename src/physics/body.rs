@@ -86,7 +86,7 @@ Copy {
             // self.mom.angular = self.mom.angular + delta_angular_mom;
             let body_contact = self.world_pos_to_body(world_contact);
             let delta_angular_vel = self.inverse_moment_of_inertia(
-                &(body_contact ^ (self.pos.angular.transpose() * *impulse)),
+                &(body_contact ^ (self.pos.angular.transposed() * *impulse)),
             );
 
             self.vel.linear = self.vel.linear + *impulse / self.mass;
@@ -167,7 +167,7 @@ Copy {
     }
 
     pub fn world_vec_to_body(&self, v: &VecN<T, N>) -> VecN<T, N> {
-        self.pos.angular.transpose() * *v
+        self.pos.angular.transposed() * *v
     }
 
     pub fn body_bivec_to_world(&self, v: &BiVecN<T, N>) -> BiVecN<T, N> {
@@ -175,7 +175,7 @@ Copy {
     }
 
     pub fn world_bivec_to_body(&self, v: &BiVecN<T, N>) -> BiVecN<T, N> {
-        self.pos.angular.transpose() * *v
+        self.pos.angular.transposed() * *v
     }
 
     pub fn body_pos_to_world(&self, v: &VecN<T, N>) -> VecN<T, N> {
@@ -183,6 +183,6 @@ Copy {
     }
 
     pub fn world_pos_to_body(&self, v: &VecN<T, N>) -> VecN<T, N> {
-        self.pos.angular.transpose() * (*v - self.pos.linear)
+        self.pos.angular.transposed() * (*v - self.pos.linear)
     }
 }
